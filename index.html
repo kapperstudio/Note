@@ -345,8 +345,8 @@ button.statb{cursor:pointer}
 .leaflet-container{background:#0d1117;font-family:inherit}
 .lp{width:34px;height:34px;border-radius:50% 50% 50% 6px;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 5px 12px rgba(0,0,0,.55);border:2px solid rgba(0,0,0,.35)}
 .lp .ic{transform:rotate(45deg);width:16px;height:16px}
-.maplegend{position:absolute;left:12px;top:12px;z-index:500;display:flex;gap:6px;flex-wrap:wrap}
-.maplegend .chip{background:rgba(10,10,10,.85);backdrop-filter:blur(6px)}
+.maplegend{position:absolute;left:8px;top:8px;z-index:500;display:flex;gap:3px;flex-wrap:wrap;max-width:75%;transform:scale(.82);transform-origin:top left}
+.maplegend .chip{background:rgba(10,10,10,.72);backdrop-filter:blur(5px);padding:5px 7px;font-size:10px;line-height:1}
 .ovl.full{align-items:stretch;z-index:65;background:#000}
 .fm{flex:1;display:flex;flex-direction:column;background:#0a0a0a}
 .fm-head{display:flex;align-items:center;gap:12px;padding:14px 14px 6px}
@@ -642,6 +642,12 @@ button.statb{cursor:pointer}
 .reel-feed-media .burst{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:3}
 .reel-feed-media .burst svg{width:92px;height:92px;fill:#fff;filter:drop-shadow(0 4px 18px rgba(0,0,0,.45));animation:heartPop .7s ease forwards}
 @keyframes heartPop{0%{transform:scale(.45);opacity:0}20%{transform:scale(1.15);opacity:1}70%{transform:scale(1);opacity:1}100%{transform:scale(1.25);opacity:0}}
+
+.field-ok{border-color:#39d98a!important;box-shadow:0 0 0 1px rgba(57,217,138,.15)}
+.field-bad{border-color:#ff5268!important;box-shadow:0 0 0 1px rgba(255,82,104,.12)}
+.validation-ok{color:#39d98a!important}.validation-bad{color:#ff5268!important}.validation-warn{color:#f4b63f!important}
+.schedule-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;background:#191919;color:#9c9c9c;font-size:10px;margin:3px 3px 0 0}
+.schedule-chip.ok{background:rgba(57,217,138,.10);color:#39d98a}.schedule-chip.off{background:rgba(255,82,104,.08);color:#ff5268}
 </style>
 
 <!-- ===== FIREBASE: Auth (Email, Google, Apple/iCloud) + Firestore ===== -->
@@ -859,7 +865,8 @@ function fresh(){return{
   svcOn:true,shopOn:true,
   followers:[],follows:{},likes:{},saves:{},reported:{},reviews:{},
   balance:0,payMethod:'COD',cards:[],txs:[],
-  services:[],products:[],cart:[],
+  services:[],products:[],cart:[],mapLocations:[],businessLocation:null,
+  serviceSchedules:{}, paymentMethods:[],
   orders:[],
   cposts:[],
   prodReviews:{},svcReviews:[],
@@ -892,7 +899,7 @@ if(state){
 let FBuid=null,FBemail=null,syncT=null;
 let syncBusy=false,syncPending=false,syncRetry=0,syncRetryT=null,syncGeneration=0;
 let postsUnsub=null,cloudPostsReady=false;
-let profilesUnsub=null,followingUnsub=null,followersUnsub=null,chatUnsub=null,chatThreadsUnsub=null,storiesUnsub=null,productsUnsub=null,servicesUnsub=null,locationsUnsub=null,faqUnsub=null;
+let profilesUnsub=null,followingUnsub=null,followersUnsub=null,chatUnsub=null,chatThreadsUnsub=null,storiesUnsub=null,productsUnsub=null,servicesUnsub=null,locationsUnsub=null,faqUnsub=null,schedulesUnsub=null,reviewsUnsub=null,financeUnsub=null,ordersUnsub=null;
 const PUBLIC_PROFILES={};
 const FOLLOW_META={};
 
@@ -1082,14 +1089,18 @@ async function loadGlobalPosts(){
 
 function followDocId(follower,followee){return String(follower||'')+'_'+String(followee||'')}
 function chatDocId(a,b){return [String(a||''),String(b||'')].sort().join('_')}
-function publicProfileSnapshot(){const ps=(state.services||[]).find(s=>(s.ownerUid||s.owner)===FBuid)||state.services[0]||{};return {uid:FBuid,username:state.me.username||'',name:state.me.name||'',av:state.me.av||'',bio:state.me.bio||'',cat:state.me.cat||'',link:state.me.link||'',bookLink:state.me.bookLink||'',creator:!!state.me.creator,pro:!!(state.pro&&state.pro.on),verifiedPro:!!(state.pro&&state.pro.on),highlights:Array.isArray(state.highlights)?JSON.parse(JSON.stringify(state.highlights)):[],loc:ps.loc||'',lat:+(ps.lat||0),lng:+(ps.lng||0),updated:Date.now()}}
+function publicProfileSnapshot(){const ps=state.businessLocation||((state.mapLocations||[]).find(x=>x.kind==='business'))||{};return {uid:FBuid,username:state.me.username||'',name:state.me.name||'',av:state.me.av||'',bio:state.me.bio||'',cat:state.me.cat||'',link:state.me.link||'',bookLink:state.me.bookLink||'',creator:!!state.me.creator,pro:!!(state.pro&&state.pro.on),verifiedPro:!!(state.pro&&state.pro.on),highlights:Array.isArray(state.highlights)?JSON.parse(JSON.stringify(state.highlights)):[],loc:ps.loc||'',lat:+(ps.lat||0),lng:+(ps.lng||0),updated:Date.now()}}
 async function publishPublicProfile(){
   if(!window.BGF||!FBuid)return false;
   try{await BGF.setDoc(BGF.doc(BGF.db,'profiles',FBuid),publicProfileSnapshot(),{merge:true});return true}
   catch(e){fbErrorInfo(e,'setDoc/profiles/'+FBuid);return false}
 }
 function applyPublicProfiles(arr){
-  (arr||[]).forEach(x=>{if(!x.uid)return;PUBLIC_PROFILES[x.uid]=x;USERS[x.uid]={...(USERS[x.uid]||{}),username:x.username||x.uid,name:x.name||x.username||x.uid,av:x.av||'',bio:x.bio||'',cat:x.cat||'',link:x.link||'',bookLink:x.bookLink||'',creator:!!x.creator,pro:!!x.pro,loc:x.loc||'',lat:+(x.lat||0),lng:+(x.lng||0),highlights:Array.isArray(x.highlights)?x.highlights:[],followers:FOLLOW_META[x.uid]?.followers||[],follows:FOLLOW_META[x.uid]?.following||[],stats:[(state.posts||[]).filter(p=>p.u===x.uid||p.ownerUid===x.uid).length,0,0]}})
+  (arr||[]).forEach(x=>{if(!x.uid)return;PUBLIC_PROFILES[x.uid]=x;
+    if(x.creator)CREATORS.add(x.uid);else CREATORS.delete(x.uid);
+    if(x.verifiedPro||x.pro)PROVER.add(x.uid);else PROVER.delete(x.uid);
+    USERS[x.uid]={...(USERS[x.uid]||{}),username:x.username||x.uid,name:x.name||x.username||x.uid,av:x.av||'',bio:x.bio||'',cat:x.cat||'',link:x.link||'',bookLink:x.bookLink||'',creator:!!x.creator,pro:!!(x.pro||x.verifiedPro),verifiedPro:!!(x.verifiedPro||x.pro),loc:x.loc||'',lat:+(x.lat||0),lng:+(x.lng||0),highlights:Array.isArray(x.highlights)?x.highlights:[],followers:FOLLOW_META[x.uid]?.followers||[],follows:FOLLOW_META[x.uid]?.following||[],stats:[(state.posts||[]).filter(p=>p.u===x.uid||p.ownerUid===x.uid).length,0,0]}
+  })
 }
 
 /* ============ FIRESTORE: GLOBAL MARKETPLACE / SERVICES / MAP / FAQ ============ */
@@ -1149,17 +1160,60 @@ async function migrateCommerceToFirestore(){
 
 async function saveMapLocationRemote(loc,kind='place',extra={}){
   if(!window.BGF||!FBuid||!loc||typeof loc.lat!=='number'||typeof loc.lng!=='number')return null;
-  const id='loc_'+FBuid+'_'+Math.abs(hashS(`${loc.name}|${loc.lat}|${loc.lng}`));
+  const id=kind==='business'?'loc_business_'+FBuid:'loc_'+FBuid+'_'+Math.abs(hashS(`${loc.name}|${loc.lat}|${loc.lng}|${Date.now()}`));
   const d={ownerUid:FBuid,name:String(loc.name||'Lokasi'),lat:+loc.lat,lng:+loc.lng,kind,updated:Date.now(),...extra};
   try{await BGF.setDoc(BGF.doc(BGF.db,'locations',id),d,{merge:true});return {id,...d}}
   catch(e){fbErrorInfo(e,'setDoc/locations/'+id);return null}
 }
+async function getBusinessLocation(){
+  const cached=state.businessLocation||((state.mapLocations||[]).find(x=>x.kind==='business'));
+  if(cached)return cached;
+  if(!window.BGF||!FBuid)return null;
+  try{const snap=await BGF.getDoc(BGF.doc(BGF.db,'locations','loc_business_'+FBuid));if(snap.exists()){const x={id:snap.id,...snap.data()};state.businessLocation=x;state.mapLocations=[...(state.mapLocations||[]).filter(v=>v.id!==x.id),x];saveLocalOnly();return x}}catch(e){fbErrorInfo(e,'getDoc/locations/loc_business_'+FBuid)}
+  return null;
+}
+async function ensureBusinessLocation(cb){
+  const current=await getBusinessLocation();
+  if(current){cb&&cb(current);return current}
+  openMapPick(async p=>{const saved=await saveMapLocationRemote(p,'business');if(!saved){toast('Lokasi gagal disimpan ke Firestore');return}state.businessLocation=saved;state.mapLocations=[...(state.mapLocations||[]).filter(x=>x.kind!=='business'),saved];saveLocalOnly();cb&&cb(saved)});
+  return null;
+}
 function startLocationsListener(){
   if(!window.BGF||!FBuid)return;
   if(locationsUnsub)locationsUnsub();
-  locationsUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'locations'),BGF.where('ownerUid','==',FBuid)),snap=>{state.mapLocations=snap.docs.map(d=>({id:d.id,...d.data()}));saveLocalOnly()},e=>fbErrorInfo(e,'onSnapshot/locations'));
+  locationsUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'locations'),BGF.where('ownerUid','==',FBuid)),snap=>{state.mapLocations=snap.docs.map(d=>({id:d.id,...d.data()}));state.businessLocation=state.mapLocations.find(x=>x.kind==='business')||null;saveLocalOnly()},e=>fbErrorInfo(e,'onSnapshot/locations'));
 }
 function stopLocationsListener(){if(locationsUnsub){locationsUnsub();locationsUnsub=null}}
+/* ============ FIRESTORE: SCHEDULES / REVIEWS / PAYMENTS / HISTORY ============ */
+function normalizeSchedule(x){return {...x,days:Array.isArray(x.days)?x.days:[],open:String(x.open||'09:00'),close:String(x.close||'21:00'),active:x.active!==false}}
+function normalizeReview(x){return {...x,stars:Math.max(1,Math.min(5,+x.stars||0)),text:x.text||x.t||'',created:+(x.created||Date.now())}}
+function mergeSchedules(arr){const m={...(state.serviceSchedules||{})};(arr||[]).forEach(x=>{if(x.serviceId)m[x.serviceId]=normalizeSchedule(x)});state.serviceSchedules=m;saveLocalOnly()}
+async function saveServiceScheduleRemote(serviceId,data){
+  if(!BGF||!FBuid||!serviceId)throw new Error('Firestore belum siap');
+  const id=FBuid+'_'+serviceId; const q={...normalizeSchedule(data),id,ownerUid:FBuid,serviceId,updated:Date.now()};
+  await BGF.setDoc(BGF.doc(BGF.db,'serviceSchedules',id),q,{merge:true}); state.serviceSchedules[serviceId]=q; saveLocalOnly(); return q;
+}
+function startSchedulesListener(){if(!BGF||!FBuid)return; if(schedulesUnsub)schedulesUnsub(); schedulesUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'serviceSchedules')),snap=>mergeSchedules(snap.docs.map(d=>({id:d.id,...d.data()}))),e=>fbErrorInfo(e,'onSnapshot/serviceSchedules'))}
+function stopSchedulesListener(){if(schedulesUnsub){schedulesUnsub();schedulesUnsub=null}}
+function scheduleForService(id){return normalizeSchedule((state.serviceSchedules||{})[id]||{serviceId:id,days:[],open:'09:00',close:'21:00',active:false})}
+function scheduleHTML(sc){const days=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];return `<div>${days.map(d=>`<span class="schedule-chip ${sc.days.includes(d)?'ok':'off'}">${d}</span>`).join('')}<span class="schedule-chip ${sc.active&&sc.days.length?'ok':'off'}">${sc.active&&sc.days.length?esc(sc.open)+'–'+esc(sc.close):'Jadwal belum diatur'}</span></div>`}
+async function saveReviewRemote(order,stars,text){
+  if(!BGF||!FBuid)throw new Error('Firestore belum siap');
+  const targetUid=order.ownerUid||order.barberUid||order.uid||order.providerUid||'';
+  const id='rv_'+FBuid+'_'+String(order.id||Date.now());
+  const q={id,ownerUid:targetUid,reviewerUid:FBuid,orderId:order.id||'',serviceId:order.serviceId||'',stars:+stars,text:String(text||''),created:Date.now()};
+  await BGF.setDoc(BGF.doc(BGF.db,'reviews',id),q,{merge:true}); return q;
+}
+function startReviewsListener(){if(!BGF||!FBuid)return; if(reviewsUnsub)reviewsUnsub(); reviewsUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'reviews')),snap=>{state.svcReviews=snap.docs.map(d=>normalizeReview({id:d.id,...d.data(),u:d.data().reviewerUid}));saveLocalOnly()},e=>fbErrorInfo(e,'onSnapshot/reviews'))}
+function stopReviewsListener(){if(reviewsUnsub){reviewsUnsub();reviewsUnsub=null}}
+async function savePaymentMethodsRemote(){if(!BGF||!FBuid)throw new Error('Firestore belum siap');const q={ownerUid:FBuid,methods:state.cards||[],selected:state.payMethod||'COD',updated:Date.now()};await BGF.setDoc(BGF.doc(BGF.db,'paymentMethods',FBuid),q,{merge:true});return q}
+async function loadPaymentMethodsRemote(){if(!BGF||!FBuid)return;try{const d=await BGF.getDoc(BGF.doc(BGF.db,'paymentMethods',FBuid));if(d.exists()){const x=d.data();state.cards=Array.isArray(x.methods)?x.methods:state.cards;state.payMethod=x.selected||state.payMethod}}catch(e){fbErrorInfo(e,'getDoc/paymentMethods/'+FBuid)}}
+async function saveTransactionRemote(tx){if(!BGF||!FBuid)throw new Error('Firestore belum siap');const q={...tx,ownerUid:FBuid,updated:Date.now()};await BGF.setDoc(BGF.doc(BGF.db,'transactions',q.id),q,{merge:true});return q}
+async function saveOrderRemote(order){if(!BGF||!FBuid)throw new Error('Firestore belum siap');const q={...order,ownerUid:FBuid,updated:Date.now()};await BGF.setDoc(BGF.doc(BGF.db,'orders',q.id),q,{merge:true});return q}
+function startFinancialListeners(){if(!BGF||!FBuid)return;if(financeUnsub)financeUnsub();financeUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'transactions'),BGF.where('ownerUid','==',FBuid)),snap=>{state.txs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updated||0)-(a.updated||0));saveLocalOnly()},e=>fbErrorInfo(e,'onSnapshot/transactions'));if(ordersUnsub)ordersUnsub();ordersUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'orders'),BGF.where('ownerUid','==',FBuid)),snap=>{state.orders=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updated||0)-(a.updated||0));saveLocalOnly()},e=>fbErrorInfo(e,'onSnapshot/orders'))}
+function stopFinancialListeners(){if(financeUnsub){financeUnsub();financeUnsub=null}if(ordersUnsub){ordersUnsub();ordersUnsub=null}}
+function validateServiceFields(n,p,d){return !!n&&Number(p)>=0&&!!d}
+function validateSchedule(sc){return !!sc.active&&Array.isArray(sc.days)&&sc.days.length>0&&/^([01]\\d|2[0-3]):[0-5]\\d$/.test(sc.open)&&/^([01]\\d|2[0-3]):[0-5]\\d$/.test(sc.close)&&sc.open<sc.close}
 const FAQ_DEFAULT=[
   {id:'what',q:'Apa itu BARBERGO?',a:'BARBERGO adalah komunitas dan marketplace untuk barber, barbershop, kreator grooming, booking layanan, dan produk barber.'},
   {id:'pro',q:'Apa itu akun profesional terverifikasi?',a:'Akun profesional menandakan profil barber atau barbershop yang mengaktifkan fitur profesional dan memenuhi persyaratan aplikasi.'},
@@ -1375,6 +1429,7 @@ async function loadCloudProfile(user){
       startStoriesListener();
       startGlobalCommerceListeners();
       startLocationsListener();
+      startSchedulesListener(); startReviewsListener(); startFinancialListeners(); await loadPaymentMethodsRemote();
       await loadFaqs(); startFaqListener();
       startProfilesListener();
       startFollowListeners();
@@ -1399,6 +1454,7 @@ async function loadCloudProfile(user){
       startStoriesListener();
       startGlobalCommerceListeners();
       startLocationsListener();
+      startSchedulesListener(); startReviewsListener(); startFinancialListeners(); await loadPaymentMethodsRemote();
       await loadFaqs(); startFaqListener();
       startProfilesListener();
       startFollowListeners();
@@ -1434,6 +1490,7 @@ function initCloudAuth(){
       stopStoriesListener();
       stopGlobalCommerceListeners();
       stopLocationsListener();
+      stopSchedulesListener(); stopReviewsListener(); stopFinancialListeners();
       stopFaqListener();
       stopProfilesListener();
       stopFollowListeners();
@@ -2091,9 +2148,9 @@ function scrBooking(barberId){
   const isMe=bk==='me';
   const U=isMe?{...publicUser('me'),rating:'',reviews:0,loc:(state.services[0]&&state.services[0].loc)||''}:publicUser(bk);
   if(!bk || (!isMe && (!U || (!U.username&&!U.name))))return `<section class="screen"><div class="empty">Profil barber tidak ditemukan.</div></section>`;
-  const svcs=isMe?state.services:[];
+  const svcs=state.services.filter(s=>s&&(isMe?(s.ownerUid===FBuid||s.owner==='me'):s.ownerUid===bk));
   const ukey=isMe?'me':bk;
-  const reviews=state.svcReviews.filter(r=>r.u&&r.u!=='me');
+  const reviews=state.svcReviews.filter(r=>r.reviewerUid&&r.reviewerUid!=='me'&&(!r.ownerUid||r.ownerUid===bk));
   return `<section class="screen fixed">
   <header class="appbar">${backBtn}<div class="ab-title">Booking ${isMe?'Layanan Saya':esc(U.username||U.name||ukey)}</div><span class="ab-sp"></span></header>
   <div class="scrollcol">
@@ -2104,7 +2161,7 @@ function scrBooking(barberId){
       <button class="tl on" data-tab="jadwal">Jadwal</button>
       <button class="tl" data-tab="layanan">Layanan</button>
       <button class="tl" data-tab="ulasan">Ulasan</button></div>
-    <div data-btab="jadwal"><div class="empty">Jadwal akan tampil setelah barber menambahkan layanan dan jadwal.</div></div>
+    <div data-btab="jadwal">${svcs.map(s=>{const sc=scheduleForService(s.id);return `<div class="cardish" style="margin:8px 0;padding:11px 12px"><b>${esc(s.n)}</b>${scheduleHTML(sc)}</div>`}).join('')||'<div class="empty">Jadwal akan tampil setelah barber menambahkan layanan dan jadwal.</div>'}</div>
     <div data-btab="layanan" hidden>${svcs.map((s,i)=>`<div class="srv-row${i===0?' sel':''}" data-srv data-n="${esc(s.n)}" data-p="${s.p}"><div class="sr"><b>${esc(s.n)}</b><span>${esc(s.d||'')}</span></div><span class="pr">${rp(s.p)}</span><span class="ck">${I('check','ic ic14')}</span></div>`).join('')||'<div class="empty">Belum ada layanan.</div>'}</div>
     <div data-btab="ulasan" hidden>${reviews.map(r=>`<div class="rev">${av(r.u,40)}<div class="txt"><b>${uname(r.u)}${vb(r.u)}</b><span class="stars">${Array.from({length:5},(_,i)=>`<svg class="ic" style="color:${i<r.stars?'#f4b63f':'#3a3a3a'}"><use href="#i-star"/></svg>`).join('')}</span>${esc(r.t||'')}<div class="c-time">${r.time||''}</div></div></div>`).join('')||'<div class="empty">Belum ada ulasan.</div>'}</div>
     <div style="height:14px"></div></div>
@@ -2438,28 +2495,29 @@ function scrFollowing(){
 }
 function svcSheet(i){
   const s=i!=null?state.services[i]:{n:'',d:'',p:'',loc:'',mi:'scissors'};
-  let loc=s.loc||'';
+  const shared=state.businessLocation||((state.mapLocations||[]).find(x=>x.kind==='business'))||null;
+  let loc=s.loc||(shared&&shared.name)||'';
+  let locLat=s.lat||(shared&&shared.lat)||0,locLng=s.lng||(shared&&shared.lng)||0,locId=s.locationId||(shared&&shared.id)||'';
   openSheet(`<h3 class="sh-t">${i!=null?'Edit':'Tambah'} Layanan</h3>
     <div class="e-field"><label>Nama Layanan</label><input id="svN" value="${esc(s.n)}" placeholder="Haircut"></div>
     <div class="e-field"><label>Durasi</label><input id="svD" value="${esc(s.d)}" placeholder="45 menit"></div>
     <div class="e-field"><label>Harga (Rp)</label><input id="svP" type="number" value="${s.p||''}" placeholder="45000"></div>
     <div class="e-field"><label>Ikon Maps</label><select id="svI">${['scissors','pin','bag','star','store'].map(o=>`<option ${o===(s.mi||'scissors')?'selected':''}>${o}</option>`).join('')}</select></div>
-    <div class="e-field"><label>Lokasi di Maps (wajib)</label><button class="btn-o" id="svLocBtn" style="padding:12px">${loc?esc(loc):'Pilih Lokasi di Maps'}</button></div>
+    <div id="svValid" class="validation-warn" style="font-size:11px;margin:-2px 0 8px">Isi nama, durasi, harga, dan lokasi.</div><div class="e-field"><label>Lokasi usaha (1 lokasi untuk semua layanan)</label><button class="btn-o" id="svLocBtn" style="padding:12px">${loc?esc(loc):'Pilih Lokasi di Maps'}</button><small class="sub" style="display:block;margin-top:6px">Lokasi hanya disimpan satu kali. Layanan berikutnya memakai lokasi yang sama.</small></div>
     <div class="sh-actions"><button class="btn-o" data-close>Batal</button><button class="btn" id="svSave">Simpan</button></div>`);
-  let locLat=s.lat||0,locLng=s.lng||0;
-  $('#svLocBtn').onclick=()=>openMapPick(p=>{loc=p.name;locLat=p.lat;locLng=p.lng;$('#svLocBtn').textContent=p.name});
+  $('#svLocBtn').onclick=()=>{if(state.businessLocation||((state.mapLocations||[]).find(x=>x.kind==='business'))){toast('Lokasi usaha sudah tersimpan. Semua layanan memakai lokasi yang sama.')}else ensureBusinessLocation(p=>{loc=p.name;locLat=p.lat;locLng=p.lng;locId=p.id;$('#svLocBtn').textContent=p.name})};
   $('#svSave').onclick=e=>{
     const n=$('#svN').value.trim();
-    if(!n){snd('cancel');toast('Nama layanan wajib diisi');return}
-    if(!loc){snd('cancel');toast('Wajib pilih lokasi di maps');return}
+    const d=$('#svD').value.trim(), price=+$('#svP').value||0; if(!validateServiceFields(n,price,d)){snd('cancel');$('#svValid').className='validation-bad';$('#svValid').textContent='Nama, durasi, dan harga harus valid.';toast('Data layanan belum valid');return} if(!loc){snd('cancel');toast('Wajib pilih lokasi di maps');return}
     withLoad(e.target,700,()=>{
-      const old=i!=null?state.services[i]:{};const obj={...old,n,d:$('#svD').value.trim()||'-',p:+$('#svP').value||0,loc,lat:+(locLat||old.lat||0),lng:+(locLng||old.lng||0),mi:$('#svI').value,active:true};
+      const old=i!=null?state.services[i]:{};const shared=state.businessLocation||((state.mapLocations||[]).find(x=>x.kind==='business'))||null;const obj={...old,n,d:$('#svD').value.trim()||'-',p:+$('#svP').value||0,loc:(shared&&shared.name)||loc,lat:+((shared&&shared.lat)||locLat||old.lat||0),lng:+((shared&&shared.lng)||locLng||old.lng||0),locationId:(shared&&shared.id)||locId||old.locationId||'',mi:$('#svI').value,active:true};
       const finish=async()=>{const ok=await publishServiceCloud(obj);if(!ok)throw new Error('Firestore menolak layanan');if(i!=null)state.services[i]=obj;else state.services.push(obj);await publishPublicProfile();save();snd('confirm');closeSheet();refresh();toast('Layanan tersimpan di Firestore. Pin muncul di peta')};finish().catch(err=>{snd('cancel');toast('Gagal menyimpan layanan: '+fbErr(err))});});
   };
 }
 function prodSheet(i){
   const p0=i!=null?state.products[i]:{n:'',p:'',cat:'pomade',loc:'',desc:'',mi:'bag',photos:[]};
-  let loc=p0.loc||'';
+  const shared=state.businessLocation||((state.mapLocations||[]).find(x=>x.kind==='business'))||null;
+  let loc=p0.loc||(shared&&shared.name)||'';
   let photos=[...(p0.photos||[])];
   openSheet(`<h3 class="sh-t">${i!=null?'Edit':'Tambah'} Produk</h3>
     <div class="e-field"><label>Foto Produk (1-3, wajib min 1 · Cloudinary)</label>
@@ -2472,7 +2530,7 @@ function prodSheet(i){
     <div class="e-field"><label>Harga (Rp)</label><input id="prP" type="number" value="${p0.p||''}" placeholder="100000"></div>
     <div class="e-field"><label>Kategori</label><select id="prC">${['pomade','alat','perawatan'].map(c=>`<option ${c===p0.cat?'selected':''}>${c}</option>`).join('')}</select></div>
     <div class="e-field"><label>Deskripsi</label><textarea id="prDesc" rows="2" placeholder="Deskripsi produk...">${esc(p0.desc||'')}</textarea></div>
-    <div class="e-field"><label>Lokasi Toko di Maps (wajib)</label><button class="btn-o" id="prLocBtn" style="padding:12px">${loc?esc(loc):'Pilih Lokasi di Maps'}</button></div>
+    <div class="e-field"><label>Lokasi toko (1 lokasi untuk semua produk)</label><button class="btn-o" id="prLocBtn" style="padding:12px">${loc?esc(loc):'Pilih Lokasi di Maps'}</button><small class="sub" style="display:block;margin-top:6px">Marketplace memakai lokasi usaha yang sama. Tidak bisa menambah lokasi baru per produk.</small></div>
     <div class="sh-actions"><button class="btn-o" data-close>Batal</button><button class="btn" id="prSave">Simpan</button></div>`);
   const draw=()=>{
     $('#prPhotos').innerHTML=photos.map((ph,k)=>`<span class="s-to" style="position:relative"><span class="pr-ic" style="width:60px;height:60px;padding:0;overflow:hidden"><img src="${ph.startsWith('data:')||ph.startsWith('http')?ph:PIC(ph)}" style="width:100%;height:100%;object-fit:cover" alt=""></span><button class="rm" data-prm="${k}" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#ff4458;color:#fff;font-size:13px">x</button></span>`).join('');
@@ -2493,25 +2551,36 @@ function prodSheet(i){
     const rm=e.target.closest('[data-prm]');
     if(rm){photos.splice(+rm.dataset.prm,1);draw();snd('cancel')}
   });
-  let locLat=p0.lat||0,locLng=p0.lng||0;
-  $('#prLocBtn').onclick=()=>openMapPick(pl=>{loc=pl.name;locLat=pl.lat;locLng=pl.lng;$('#prLocBtn').textContent=pl.name});
+  let locLat=p0.lat||(shared&&shared.lat)||0,locLng=p0.lng||(shared&&shared.lng)||0,locId=p0.locationId||(shared&&shared.id)||'';
+  $('#prLocBtn').onclick=()=>{if(state.businessLocation||((state.mapLocations||[]).find(x=>x.kind==='business'))){toast('Lokasi usaha sudah tersimpan. Semua produk memakai lokasi yang sama.')}else ensureBusinessLocation(p=>{loc=p.name;locLat=p.lat;locLng=p.lng;locId=p.id;$('#prLocBtn').textContent=p.name})};
   $('#prSave').onclick=e=>{
     const n=$('#prN').value.trim();
     if(!n){snd('cancel');toast('Nama produk wajib diisi');return}
     if(photos.length<1){snd('cancel');toast('Minimal 1 foto produk wajib');return}
     if(!loc){snd('cancel');toast('Wajib pilih lokasi toko di maps');return}
     withLoad(e.target,700,()=>{
-      const old=i!=null?state.products[i]:{};const obj={...old,n,p:+$('#prP').value||0,cat:$('#prC').value,desc:$('#prDesc').value.trim(),loc,lat:+(locLat||old.lat||0),lng:+(locLng||old.lng||0),mi:p0.mi||'bag',owner:'me',ownerUid:FBuid,r:p0.r||'Baru',c:p0.c||0,svg:p0.svg,photos:photos.slice(0,3),active:true};
+      const old=i!=null?state.products[i]:{};const shared=state.businessLocation||((state.mapLocations||[]).find(x=>x.kind==='business'))||null;const obj={...old,n,p:+$('#prP').value||0,cat:$('#prC').value,desc:$('#prDesc').value.trim(),loc:(shared&&shared.name)||loc,lat:+((shared&&shared.lat)||locLat||old.lat||0),lng:+((shared&&shared.lng)||locLng||old.lng||0),locationId:(shared&&shared.id)||locId||old.locationId||'',mi:p0.mi||'bag',owner:'me',ownerUid:FBuid,r:p0.r||'Baru',c:p0.c||0,svg:p0.svg,photos:photos.slice(0,3),active:true};
       const finish=async()=>{const ok=await publishProductCloud(obj);if(!ok)throw new Error('Firestore menolak produk');if(i!=null)state.products[i]=obj;else state.products.push(obj);save();snd('confirm');closeSheet();refresh();toast('Produk tersimpan di Firestore dengan '+Math.min(photos.length,3)+' foto')};finish().catch(err=>{snd('cancel');toast('Gagal menyimpan produk: '+fbErr(err))});});
   };
+}
+function serviceScheduleSheet(i){
+  const s=state.services[i]; if(!s)return; const old=scheduleForService(s.id); let days=[...old.days];
+  openSheet(`<h3 class="sh-t">Atur Jadwal · ${esc(s.n)}</h3><p class="sh-sub">Jadwal ini tersimpan di Firestore dan digunakan saat booking.</p>
+    <div class="e-field"><label>Hari aktif</label><div id="schDays" style="display:flex;flex-wrap:wrap;gap:7px">${['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d=>`<button type="button" class="chip ${days.includes(d)?'active':''}" data-day="${d}">${d}</button>`).join('')}</div><small id="schVal" class="validation-warn">Pilih minimal 1 hari.</small></div>
+    <div style="display:flex;gap:10px"><div class="e-field" style="flex:1"><label>Buka</label><input id="schOpen" type="time" value="${esc(old.open)}"></div><div class="e-field" style="flex:1"><label>Tutup</label><input id="schClose" type="time" value="${esc(old.close)}"></div></div>
+    <div class="e-field"><label>Status</label><button id="schActive" class="btn-o" style="width:100%">${old.active?'Aktif':'Nonaktif'}</button></div>
+    <div id="schPreview">${scheduleHTML(old)}</div><div class="sh-actions"><button class="btn-o" data-close>Batal</button><button class="btn" id="schSave">Simpan Jadwal</button></div>`);
+  let active=!!old.active;
+  const validate=()=>{const sc={days,open:$('#schOpen').value,close:$('#schClose').value,active};const ok=validateSchedule(sc);$('#schVal').textContent=ok?'Jadwal valid':'Pilih hari dan pastikan jam buka lebih awal dari jam tutup';$('#schVal').className=ok?'validation-ok':'validation-bad';$('#schPreview').innerHTML=scheduleHTML(sc);return ok};
+  $$('#sheetOvl [data-day]').forEach(b=>b.onclick=()=>{const d=b.dataset.day;days=days.includes(d)?days.filter(x=>x!==d):[...days,d];b.classList.toggle('active',days.includes(d));validate()});
+  $('#schOpen').oninput=validate;$('#schClose').oninput=validate;$('#schActive').onclick=()=>{active=!active;$('#schActive').textContent=active?'Aktif':'Nonaktif';validate()};
+  $('#schSave').onclick=async e=>{const sc={days,open:$('#schOpen').value,close:$('#schClose').value,active};if(!validate()){snd('cancel');toast('Jadwal belum valid');return}try{await saveServiceScheduleRemote(s.id,sc);closeSheet();refresh();snd('confirm');toast('Jadwal tersimpan di Firestore')}catch(err){snd('cancel');toast('Gagal menyimpan jadwal: '+fbErr(err))}};
 }
 function scrServices(){return `<section class="screen">
   <header class="appbar">${backBtn}<div class="ab-title">Atur Layanan</div><button class="ab-ic" data-addsrv="1">${I('plus','ic ic24')}</button></header>
   <div class="togglerow">${I('sparkle','ic ic18')}Layanan Aktif (tampil di maps &amp; booking)<span class="switch${state.svcOn?' on':''}" data-svctoggle></span></div>
   <div class="scrollcol" style="padding-bottom:20px">
-    ${state.svcOn?state.services.map((s,i)=>`<div class="mg-row"><div class="sr"><b>${esc(s.n)}</b><span>${esc(s.d)} · ${rp(s.p)}</span><span class="locbadge">${I('pin','ic ic12')}${esc(s.loc||'-')}</span></div>
-      <div class="mg-act"><button class="icbtn" data-editsrv="${i}">${I('edit','ic ic14')}</button><button class="icbtn" data-delsrv="${i}">${I('trash','ic ic14')}</button></div></div>`).join('')||'<div class="empty">Belum ada layanan.<br>Tap + untuk menambahkan (lokasi maps wajib).</div>':'<div class="empty">Layanan dinonaktifkan.<br>Aktifkan toggle di atas untuk menampilkan layananmu.</div>'}</div></section>`;
-}
+    ${state.svcOn?state.services.map((s,i)=>{const sc=scheduleForService(s.id);const valid=validateSchedule(sc);return `<div class="mg-row"><div class="sr"><b>${esc(s.n)}</b><span>${esc(s.d)} · ${rp(s.p)}</span><span class="locbadge">${I('pin','ic ic12')}${esc(s.loc||'-')}</span><span class="${valid?'validation-ok':'validation-bad'}" style="font-size:10px">${valid?'Jadwal valid':'Jadwal belum diatur'}</span></div><div class="mg-act"><button class="icbtn" data-schedulesrv="${i}" title="Atur jadwal">${I('calendar','ic ic14')}</button><button class="icbtn" data-editsrv="${i}">${I('edit','ic ic14')}</button><button class="icbtn" data-delsrv="${i}">${I('trash','ic ic14')}</button></div></div>`}).join('')||'<div class="empty">Belum ada layanan.<br>Tap + untuk menambahkan (lokasi maps wajib).</div>':'<div class="empty">Layanan dinonaktifkan.<br>Aktifkan toggle di atas untuk menampilkan layananmu.</div>'}</div></section>`;}
 function scrProducts(){return `<section class="screen">
   <header class="appbar">${backBtn}<div class="ab-title">Atur Marketplace</div><button class="ab-ic" data-addprod="1">${I('plus','ic ic24')}</button></header>
   <div class="togglerow">${I('store','ic ic18')}Toko Aktif (produk tampil di marketplace &amp; maps)<span class="switch${state.shopOn?' on':''}" data-shoptoggle></span></div>
@@ -2777,9 +2846,7 @@ function topupSheet(){
   $('#tpGo').onclick=e=>{
     amount=+($('#tpAm').value||0);
     if(amount<10000){snd('cancel');toast('Minimal top up Rp 10.000');return}
-    withLoad(e.target,500,()=>{
-      state.txs.unshift({id:'t'+Date.now(),type:'topup',method:meth,amount,status:'Menunggu Konfirmasi',time:'Baru saja',applied:false});
-      save();closeSheet();snd('confirm');vibrate();refresh();toast('Permintaan top up masuk History. Menunggu konfirmasi.');});
+    withLoad(e.target,500,async()=>{try{const tx={id:'t'+Date.now(),type:'topup',method:meth,amount,status:'Menunggu Konfirmasi',time:'Baru saja',applied:false};await saveTransactionRemote(tx);state.txs.unshift(tx);save();closeSheet();snd('confirm');vibrate();refresh();toast('Permintaan top up masuk History & Firestore.')}catch(err){toast('Gagal menyimpan transaksi: '+fbErr(err))}});
   };
 }
 function withdrawSheet(){
@@ -2791,10 +2858,7 @@ function withdrawSheet(){
     const amount=+($('#wdAm').value||0);
     if(amount<10000){snd('cancel');toast('Minimal penarikan Rp 10.000');return}
     if(amount>state.balance){snd('cancel');toast('Saldo tidak cukup');return}
-    withLoad(e.target,500,()=>{
-      const code='WD'+Math.floor(100000+Math.random()*900000);
-      state.txs.unshift({id:'t'+Date.now(),type:'withdraw',method:$('#wdM').value,amount,status:'Menunggu Konfirmasi',time:'Baru saja',code,applied:false});
-      save();closeSheet();snd('confirm');vibrate();refresh();toast('Permintaan penarikan masuk History. Menunggu konfirmasi.');});
+    withLoad(e.target,500,async()=>{try{const code='WD'+Math.floor(100000+Math.random()*900000);const tx={id:'t'+Date.now(),type:'withdraw',method:$('#wdM').value,amount,status:'Menunggu Konfirmasi',time:'Baru saja',code,applied:false};await saveTransactionRemote(tx);state.txs.unshift(tx);save();closeSheet();snd('confirm');vibrate();refresh();toast('Permintaan penarikan masuk History & Firestore.')}catch(err){toast('Gagal menyimpan transaksi: '+fbErr(err))}});
   };
 }
 function wdCodeSheet(id){
@@ -2808,15 +2872,15 @@ function reviewSheet(oid){
   let stars=5;
   openSheet(`<h3 class="sh-t">Beri Ulasan</h3><p class="sh-sub">${esc(o.title)}</p>
     <div class="stars-in" id="stIn">${[1,2,3,4,5].map(k=>`<button data-st="${k}" class="${k<=5?'on':''}">${I('star','ic')}</button>`).join('')}</div>
-    <div class="e-field"><textarea id="rvTx" rows="3" placeholder="Bagaimana pelayanannya?"></textarea></div>
+    <div id="rvVal" class="validation-ok" style="font-size:11px;margin:4px 0 7px">Rating 5/5 · Tulis minimal 3 karakter.</div><div class="e-field"><textarea id="rvTx" rows="3" placeholder="Bagaimana pelayanannya?"></textarea></div>
     <div class="sh-actions"><button class="btn-o" data-close>Batal</button><button class="btn" id="rvGo">Kirim Ulasan</button></div>`);
-  $$('#sheetOvl [data-st]').forEach(b=>b.onclick=()=>{stars=+b.dataset.st;$$('#sheetOvl [data-st]').forEach(x=>x.classList.toggle('on',+x.dataset.st<=stars))});
+  $$('#sheetOvl [data-st]').forEach(b=>b.onclick=()=>{stars=+b.dataset.st;$$('#sheetOvl [data-st]').forEach(x=>x.classList.toggle('on',+x.dataset.st<=stars));$('#rvVal').textContent='Rating '+stars+'/5 · '+($('#rvTx').value.trim().length>=3?'Ulasan valid.':'Tulis minimal 3 karakter.');$('#rvVal').className=$('#rvTx').value.trim().length>=3?'validation-ok':'validation-warn'});$('#rvTx').oninput=()=>{$('#rvVal').textContent='Rating '+stars+'/5 · '+($('#rvTx').value.trim().length>=3?'Ulasan valid.':'Tulis minimal 3 karakter.');$('#rvVal').className=$('#rvTx').value.trim().length>=3?'validation-ok':'validation-warn'};
   $('#rvGo').onclick=e=>{
     const t=$('#rvTx').value.trim()||'Mantap!';
-    withLoad(e.target,800,()=>{
-      state.reviews[oid]=1;
-      state.svcReviews.unshift({u:'me',t,stars,time:'Baru saja'});
-      save();closeSheet();snd('confirm');refresh();toast('Ulasan terkirim. Terima kasih!');});
+    withLoad(e.target,800,async()=>{
+      if(stars<1||stars>5){toast('Pilih rating 1–5');return}
+      if(t.length<3){toast('Ulasan minimal 3 karakter');return}
+      try{const q=await saveReviewRemote(o,stars,t);state.reviews[oid]=1;state.svcReviews.unshift({id:q.id,u:'me',t,stars,time:'Baru saja',reviewerUid:FBuid});save();closeSheet();snd('confirm');refresh();toast('Ulasan tersimpan di Firestore. Terima kasih!')}catch(err){snd('cancel');toast('Gagal menyimpan ulasan: '+fbErr(err))}});
   };
 }
 function addHighlightSheet(){
@@ -3102,6 +3166,7 @@ document.addEventListener('click',e=>{
       stopStoriesListener();
       stopGlobalCommerceListeners();
       stopLocationsListener();
+      stopSchedulesListener(); stopReviewsListener(); stopFinancialListeners();
       stopFaqListener();
       stopProfilesListener();
       stopFollowListeners();
@@ -3116,10 +3181,10 @@ document.addEventListener('click',e=>{
   if(pron){
     const ok=proReq().every(r=>r.ok);
     if(!ok){snd('cancel');toast('Penuhi semua syarat dulu');return}
-    withLoad(pron,900,()=>{state.pro.on=true;save();publishPublicProfile();snd('confirm');vibrate();refresh();toast('Akun Profesional aktif + lencana merah')});return;
+    withLoad(pron,900,async()=>{state.pro.on=true;save();const ok=await publishPublicProfile();if(!ok){state.pro.on=false;save();toast('Gagal menyimpan status Verified ke Firestore');return}snd('confirm');vibrate();refresh();toast('Akun Profesional aktif + lencana merah')});return;
   }
   if(t.closest('[data-prooff]')){
-    confirmSheet('Nonaktifkan Akun Profesional?',()=>{state.pro.on=false;save();publishPublicProfile();refresh();toast('Kembali ke akun biasa')});return;
+    confirmSheet('Nonaktifkan Akun Profesional?',async()=>{state.pro.on=false;save();const ok=await publishPublicProfile();if(!ok){state.pro.on=true;save();toast('Gagal mengubah status Verified di Firestore');return}refresh();toast('Kembali ke akun biasa')});return;
   }
   const stg=t.closest('[data-svctoggle]');
   if(stg){state.svcOn=!state.svcOn;save();publishPublicProfile();snd(state.svcOn?'confirm':'cancel');refresh();toast('Layanan '+(state.svcOn?'diaktifkan':'dinonaktifkan'));return}
@@ -3246,17 +3311,14 @@ document.addEventListener('click',e=>{
   if(rm){state.cart.splice(+rm.dataset.rm,1);save();closeSheet();snd('cancel');if($('#cartBtn'))$('#cartBtn').click();return}
   if(t.closest('#ckOut')){closeSheet();go('payment');return}
   const ps=t.closest('[data-paysel]');
-  if(ps){state.payMethod=ps.dataset.paysel;save();snd('confirm');refresh();toast('Metode: '+ps.dataset.paysel);return}
+  if(ps){state.payMethod=ps.dataset.paysel;savePaymentMethodsRemote().then(()=>{save();snd('confirm');refresh();toast('Metode pembayaran tersimpan di Firestore')}).catch(e=>toast('Gagal menyimpan metode: '+fbErr(e)));return}
   if(t.closest('#payGo')){
     const btn=t.closest('#payGo');
     const total=state.cart.reduce((a,b)=>a+b.p,0);
     const m=state.payMethod;
     if(m==='SooPay'&&state.balance<total){snd('cancel');toast('Saldo SooPay tidak cukup. Top up dulu.');return}
-    withLoad(btn,1300,()=>{
-      if(m==='SooPay')state.balance-=total;
-      state.orders.unshift({id:'o'+Date.now(),kind:'shop',title:state.cart.map(i2=>i2.n).join(', ').slice(0,42),sub:'Marketplace',price:total,status:'Diproses',time:'Baru saja'});
-      state.cart=[];save();snd('book');vibrate();
-      go('orders');toast('Pembayaran berhasil. Pesanan diproses');});
+    withLoad(btn,1300,async()=>{
+      try{if(m==='SooPay')state.balance-=total;const order={id:'o'+Date.now(),kind:'shop',title:state.cart.map(i2=>i2.n).join(', ').slice(0,42),sub:'Marketplace',price:total,status:'Diproses',time:'Baru saja',paymentMethod:m};await saveOrderRemote(order);state.orders.unshift(order);state.cart=[];save();snd('book');vibrate();go('orders');toast('Pembayaran berhasil. Pesanan tersimpan di Firestore')}catch(err){toast('Gagal menyimpan order: '+fbErr(err))}});
     return;
   }
   if(t.closest('#bkNext')){
@@ -3273,11 +3335,8 @@ document.addEventListener('click',e=>{
   if(t.closest('#bkOk')){
     const ukey=t.closest('#bkOk').dataset.bk||'me';
     const lines=t.closest('.sheet').querySelector('.bk-sum .lines');
-    withLoad(t.closest('#bkOk'),900,()=>{
-      state.orders.unshift({id:'o'+Date.now(),kind:'booking',title:uname(ukey)+' · '+(lines.querySelector('b').textContent.split('· ')[1]||'Haircut'),sub:lines.textContent.split('-')[0].replace(/^[^b]*b>/,'').trim()||'Jadwal booking',price:0,status:'Dikonfirmasi',time:'Baru saja'});
-      state.notifs.unshift({k:'system',t:'Booking dikonfirmasi: '+lines.textContent.trim(),time:'Baru saja'});
-      state.notifSeen=false;save();closeSheet();snd('book');vibrate();
-      toast('Booking dikonfirmasi. Sampai jumpa');});
+    withLoad(t.closest('#bkOk'),900,async()=>{
+      try{const order={id:'o'+Date.now(),kind:'booking',title:uname(ukey)+' · '+(lines.querySelector('b').textContent.split('· ')[1]||'Haircut'),sub:lines.textContent.split('-')[0].replace(/^[^b]*b>/,'').trim()||'Jadwal booking',price:0,status:'Dikonfirmasi',time:'Baru saja',barberUid:ukey,serviceId:(state.services.find(x=>x.n===(lines.querySelector('b').textContent.split('· ')[1]||''))||{}).id||''};await saveOrderRemote(order);state.orders.unshift(order);state.notifs.unshift({k:'system',t:'Booking dikonfirmasi: '+lines.textContent.trim(),time:'Baru saja'});state.notifSeen=false;save();closeSheet();snd('book');vibrate();toast('Booking tersimpan di Firestore. Sampai jumpa')}catch(err){toast('Gagal menyimpan booking: '+fbErr(err))}});
     return;
   }
   const co=t.closest('[data-cancelorder]');
@@ -3293,14 +3352,16 @@ document.addEventListener('click',e=>{
   if(t.closest('[data-topup]')){topupSheet();return}
   if(t.closest('[data-withdraw]')){withdrawSheet();return}
   if(t.closest('[data-postmap]')){openMapPick(p=>{postLoc=p.name;window.__postLocGeo={lat:p.lat,lng:p.lng};$('#locChipTxt').textContent=p.name});return}
+  const ss=t.closest('[data-schedulesrv]');
+  if(ss){serviceScheduleSheet(+ss.dataset.schedulesrv);return}
   const es=t.closest('[data-editsrv]');
   if(es){svcSheet(+es.dataset.editsrv);return}
-  if(t.closest('[data-addsrv]')){svcSheet(null);return}
+  if(t.closest('[data-addsrv]')){(async()=>{const loc=await getBusinessLocation();if(loc){svcSheet(null);return}openMapPick(async p=>{const saved=await saveMapLocationRemote(p,'business');if(!saved){toast('Lokasi gagal disimpan ke Firestore');return}state.businessLocation=saved;state.mapLocations=[...(state.mapLocations||[]).filter(x=>x.kind!=='business'),saved];saveLocalOnly();svcSheet(null)})})();return}
   const ds=t.closest('[data-delsrv]');
   if(ds){confirmSheet('Hapus layanan ini?',async()=>{const idx=+ds.dataset.delsrv,p=state.services[idx];try{if(p&&p.id)await deleteServiceCloud(p.id);state.services.splice(idx,1);save();refresh();toast('Layanan dihapus dari Firestore')}catch(e){toast('Gagal menghapus layanan: '+fbErr(e))}});return}
   const ep=t.closest('[data-editprod]');
   if(ep){prodSheet(+ep.dataset.editprod);return}
-  if(t.closest('[data-addprod]')){prodSheet(null);return}
+  if(t.closest('[data-addprod]')){(async()=>{const loc=await getBusinessLocation();if(loc){prodSheet(null);return}openMapPick(async p=>{const saved=await saveMapLocationRemote(p,'business');if(!saved){toast('Lokasi gagal disimpan ke Firestore');return}state.businessLocation=saved;state.mapLocations=[...(state.mapLocations||[]).filter(x=>x.kind!=='business'),saved];saveLocalOnly();prodSheet(null)})})();return}
   const dpr=t.closest('[data-delprod]');
   if(dpr){confirmSheet('Hapus produk ini?',async()=>{const idx=+dpr.dataset.delprod,p=state.products[idx];try{if(p&&p.id)await deleteProductCloud(p.id);state.products.splice(idx,1);save();refresh();toast('Produk dihapus dari Firestore')}catch(e){toast('Gagal menghapus produk: '+fbErr(e))}});return}
   if(t.closest('[data-addcard]')){
@@ -3311,7 +3372,7 @@ document.addEventListener('click',e=>{
       <div class="sh-actions"><button class="btn-o" data-close>Batal</button><button class="btn" id="cdGo">Simpan</button></div>`);
     $('#cdGo').onclick=e2=>{const dig=$('#cdN').value.replace(/\D/g,'');
       if(dig.length<8){snd('cancel');toast('Nomor kartu tidak valid');return}
-      withLoad(e2.target,700,()=>{state.cards.push('Kartu •••• '+dig.slice(-4));save();closeSheet();snd('confirm');refresh();toast('Kartu ditambahkan')});};
+      withLoad(e2.target,700,async()=>{try{state.cards.push('Kartu •••• '+dig.slice(-4));await savePaymentMethodsRemote();save();closeSheet();snd('confirm');refresh();toast('Metode pembayaran tersimpan di Firestore')}catch(err){toast('Gagal menyimpan metode: '+fbErr(err))}});};
     return;
   }
   const frm=t.closest('[data-frm]');
