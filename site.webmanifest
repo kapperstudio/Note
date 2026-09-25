@@ -2,7 +2,7 @@
   "name": "BARBERGO",
   "short_name": "BARBERGO",
   "description": "Komunitas, marketplace, booking layanan, dan karya barber Indonesia.",
-  "start_url": "./#/home",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
