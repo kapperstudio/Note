@@ -892,7 +892,7 @@ if(state){
 let FBuid=null,FBemail=null,syncT=null;
 let syncBusy=false,syncPending=false,syncRetry=0,syncRetryT=null,syncGeneration=0;
 let postsUnsub=null,cloudPostsReady=false;
-let profilesUnsub=null,followingUnsub=null,followersUnsub=null,chatUnsub=null,chatThreadsUnsub=null,storiesUnsub=null;
+let profilesUnsub=null,followingUnsub=null,followersUnsub=null,chatUnsub=null,chatThreadsUnsub=null,storiesUnsub=null,productsUnsub=null,servicesUnsub=null,locationsUnsub=null,faqUnsub=null;
 const PUBLIC_PROFILES={};
 const FOLLOW_META={};
 
@@ -1082,15 +1082,100 @@ async function loadGlobalPosts(){
 
 function followDocId(follower,followee){return String(follower||'')+'_'+String(followee||'')}
 function chatDocId(a,b){return [String(a||''),String(b||'')].sort().join('_')}
-function publicProfileSnapshot(){return {uid:FBuid,username:state.me.username||'',name:state.me.name||'',av:state.me.av||'',bio:state.me.bio||'',cat:state.me.cat||'',link:state.me.link||'',bookLink:state.me.bookLink||'',creator:!!state.me.creator,pro:!!(state.pro&&state.pro.on),highlights:Array.isArray(state.highlights)?JSON.parse(JSON.stringify(state.highlights)):[],updated:Date.now()}}
+function publicProfileSnapshot(){const ps=(state.services||[]).find(s=>(s.ownerUid||s.owner)===FBuid)||state.services[0]||{};return {uid:FBuid,username:state.me.username||'',name:state.me.name||'',av:state.me.av||'',bio:state.me.bio||'',cat:state.me.cat||'',link:state.me.link||'',bookLink:state.me.bookLink||'',creator:!!state.me.creator,pro:!!(state.pro&&state.pro.on),verifiedPro:!!(state.pro&&state.pro.on),highlights:Array.isArray(state.highlights)?JSON.parse(JSON.stringify(state.highlights)):[],loc:ps.loc||'',lat:+(ps.lat||0),lng:+(ps.lng||0),updated:Date.now()}}
 async function publishPublicProfile(){
   if(!window.BGF||!FBuid)return false;
   try{await BGF.setDoc(BGF.doc(BGF.db,'profiles',FBuid),publicProfileSnapshot(),{merge:true});return true}
   catch(e){fbErrorInfo(e,'setDoc/profiles/'+FBuid);return false}
 }
 function applyPublicProfiles(arr){
-  (arr||[]).forEach(x=>{if(!x.uid)return;PUBLIC_PROFILES[x.uid]=x;USERS[x.uid]={...(USERS[x.uid]||{}),username:x.username||x.uid,name:x.name||x.username||x.uid,av:x.av||'',bio:x.bio||'',cat:x.cat||'',link:x.link||'',bookLink:x.bookLink||'',creator:!!x.creator,pro:!!x.pro,highlights:Array.isArray(x.highlights)?x.highlights:[],followers:FOLLOW_META[x.uid]?.followers||[],follows:FOLLOW_META[x.uid]?.following||[],stats:[(state.posts||[]).filter(p=>p.u===x.uid||p.ownerUid===x.uid).length,0,0]}})
+  (arr||[]).forEach(x=>{if(!x.uid)return;PUBLIC_PROFILES[x.uid]=x;USERS[x.uid]={...(USERS[x.uid]||{}),username:x.username||x.uid,name:x.name||x.username||x.uid,av:x.av||'',bio:x.bio||'',cat:x.cat||'',link:x.link||'',bookLink:x.bookLink||'',creator:!!x.creator,pro:!!x.pro,loc:x.loc||'',lat:+(x.lat||0),lng:+(x.lng||0),highlights:Array.isArray(x.highlights)?x.highlights:[],followers:FOLLOW_META[x.uid]?.followers||[],follows:FOLLOW_META[x.uid]?.following||[],stats:[(state.posts||[]).filter(p=>p.u===x.uid||p.ownerUid===x.uid).length,0,0]}})
 }
+
+/* ============ FIRESTORE: GLOBAL MARKETPLACE / SERVICES / MAP / FAQ ============ */
+function normalizeCloudProduct(x){
+  const q={...x};
+  q.ownerUid=q.ownerUid||q.uid||((q.owner&&q.owner!=='me')?q.owner:null);
+  if(q.ownerUid&&q.ownerUid===FBuid)q.owner='me';
+  q.photos=Array.isArray(q.photos)?q.photos:[];
+  return q;
+}
+function normalizeCloudService(x){
+  const q={...x};
+  q.ownerUid=q.ownerUid||q.uid||((q.owner&&q.owner!=='me')?q.owner:null);
+  if(q.ownerUid&&q.ownerUid===FBuid)q.owner='me';
+  return q;
+}
+function mergeCloudProducts(arr){
+  const map=new Map((state.products||[]).map(x=>[x.id||(`${x.ownerUid||x.owner}_${x.n}_${x.p}`),x]));
+  (arr||[]).map(normalizeCloudProduct).forEach(x=>map.set(x.id||(`${x.ownerUid||x.owner}_${x.n}_${x.p}`),x));
+  state.products=[...map.values()].filter(x=>x&&x.ownerUid||x.owner==='me');
+  saveLocalOnly();
+}
+function mergeCloudServices(arr){
+  const map=new Map((state.services||[]).map(x=>[x.id||(`${x.ownerUid||x.owner}_${x.n}_${x.p}`),x]));
+  (arr||[]).map(normalizeCloudService).forEach(x=>map.set(x.id||(`${x.ownerUid||x.owner}_${x.n}_${x.p}`),x));
+  state.services=[...map.values()].filter(x=>x&&x.ownerUid||x.owner==='me');
+  saveLocalOnly();
+}
+async function publishProductCloud(product){
+  if(!window.BGF||!FBuid)return false;
+  const q={...product,ownerUid:FBuid,owner:'me',updated:Date.now()};
+  if(!q.id)q.id='pr_'+FBuid+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  try{await BGF.setDoc(BGF.doc(BGF.db,'products',q.id),q,{merge:true});product.id=q.id;product.ownerUid=FBuid;product.owner='me';return true}
+  catch(e){fbErrorInfo(e,'setDoc/products/'+q.id);return false}
+}
+async function deleteProductCloud(id){if(!window.BGF||!FBuid||!id)throw new Error('Firestore belum siap');await BGF.deleteDoc(BGF.doc(BGF.db,'products',id));return true}
+async function publishServiceCloud(service){
+  if(!window.BGF||!FBuid)return false;
+  const q={...service,ownerUid:FBuid,owner:'me',updated:Date.now()};
+  if(!q.id)q.id='sv_'+FBuid+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  try{await BGF.setDoc(BGF.doc(BGF.db,'services',q.id),q,{merge:true});service.id=q.id;service.ownerUid=FBuid;service.owner='me';return true}
+  catch(e){fbErrorInfo(e,'setDoc/services/'+q.id);return false}
+}
+async function deleteServiceCloud(id){if(!window.BGF||!FBuid||!id)throw new Error('Firestore belum siap');await BGF.deleteDoc(BGF.doc(BGF.db,'services',id));return true}
+function startGlobalCommerceListeners(){
+  if(!window.BGF||!FBuid)return;
+  if(productsUnsub)productsUnsub(); if(servicesUnsub)servicesUnsub();
+  productsUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'products'),BGF.where('active','==',true)),snap=>mergeCloudProducts(snap.docs.map(d=>({id:d.id,...d.data()}))),e=>fbErrorInfo(e,'onSnapshot/products'));
+  servicesUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'services'),BGF.where('active','==',true)),snap=>mergeCloudServices(snap.docs.map(d=>({id:d.id,...d.data()}))),e=>fbErrorInfo(e,'onSnapshot/services'));
+}
+function stopGlobalCommerceListeners(){if(productsUnsub){productsUnsub();productsUnsub=null}if(servicesUnsub){servicesUnsub();servicesUnsub=null}}
+async function migrateCommerceToFirestore(){
+  if(!FBuid)return;
+  for(const p of (state.products||[]).filter(x=>x&&x.owner==='me')){if(!p.ownerUid||!p.id||!String(p.id).startsWith('pr_'))await publishProductCloud(p)}
+  for(const s of (state.services||[])){if(!s.ownerUid||!s.id||!String(s.id).startsWith('sv_'))await publishServiceCloud(s)}
+}
+
+async function saveMapLocationRemote(loc,kind='place',extra={}){
+  if(!window.BGF||!FBuid||!loc||typeof loc.lat!=='number'||typeof loc.lng!=='number')return null;
+  const id='loc_'+FBuid+'_'+Math.abs(hashS(`${loc.name}|${loc.lat}|${loc.lng}`));
+  const d={ownerUid:FBuid,name:String(loc.name||'Lokasi'),lat:+loc.lat,lng:+loc.lng,kind,updated:Date.now(),...extra};
+  try{await BGF.setDoc(BGF.doc(BGF.db,'locations',id),d,{merge:true});return {id,...d}}
+  catch(e){fbErrorInfo(e,'setDoc/locations/'+id);return null}
+}
+function startLocationsListener(){
+  if(!window.BGF||!FBuid)return;
+  if(locationsUnsub)locationsUnsub();
+  locationsUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'locations'),BGF.where('ownerUid','==',FBuid)),snap=>{state.mapLocations=snap.docs.map(d=>({id:d.id,...d.data()}));saveLocalOnly()},e=>fbErrorInfo(e,'onSnapshot/locations'));
+}
+function stopLocationsListener(){if(locationsUnsub){locationsUnsub();locationsUnsub=null}}
+const FAQ_DEFAULT=[
+  {id:'what',q:'Apa itu BARBERGO?',a:'BARBERGO adalah komunitas dan marketplace untuk barber, barbershop, kreator grooming, booking layanan, dan produk barber.'},
+  {id:'pro',q:'Apa itu akun profesional terverifikasi?',a:'Akun profesional menandakan profil barber atau barbershop yang mengaktifkan fitur profesional dan memenuhi persyaratan aplikasi.'},
+  {id:'market',q:'Bagaimana Marketplace bekerja?',a:'Produk yang dipublikasikan pemilik toko disimpan di Firestore dan dapat ditemukan pengguna lain melalui Marketplace dan Peta.'},
+  {id:'service',q:'Bagaimana layanan ditampilkan?',a:'Layanan yang aktif disimpan di Firestore bersama pemilik, harga, durasi, dan lokasi sehingga dapat muncul di profil, booking, dan Peta.'},
+  {id:'map',q:'Bagaimana lokasi dipilih?',a:'Lokasi dapat dicari melalui autocomplete peta atau dipilih langsung di peta. Lokasi yang dipilih disimpan ke Firestore.'},
+  {id:'story',q:'Berapa lama Story tersedia?',a:'Story aktif selama 24 jam sejak dibuat.'}
+];
+function mergeFaqs(arr){const m=new Map(FAQ_DEFAULT.map(x=>[x.id,x]));(arr||[]).forEach(x=>m.set(x.id||x.q,{...x}));state.faqs=[...m.values()];saveLocalOnly()}
+async function loadFaqs(){
+  if(!window.BGF){state.faqs=FAQ_DEFAULT.slice();return}
+  try{const snap=await BGF.getDocs(BGF.collection(BGF.db,'faqs'));mergeFaqs(snap.docs.map(d=>({id:d.id,...d.data()})))}catch(e){fbErrorInfo(e,'getDocs/faqs');state.faqs=FAQ_DEFAULT.slice()}
+}
+function startFaqListener(){if(!window.BGF)return;if(faqUnsub)faqUnsub();faqUnsub=BGF.onSnapshot(BGF.collection(BGF.db,'faqs'),snap=>mergeFaqs(snap.docs.map(d=>({id:d.id,...d.data()}))),e=>fbErrorInfo(e,'onSnapshot/faqs'))}
+function stopFaqListener(){if(faqUnsub){faqUnsub();faqUnsub=null}}
+
 function startProfilesListener(){
   if(!window.BGF||!FBuid)return;
   if(profilesUnsub){profilesUnsub();profilesUnsub=null}
@@ -1280,7 +1365,7 @@ async function loadCloudProfile(user){
       state.me={...state.me,...(d.me||{})};
       if(d.gender)state.gender=d.gender;
       if(d.createdAt)state.createdAt=d.createdAt;
-      state.pro={on:!!(d.pro&&d.pro.on)};
+      state.pro={on:!!((d.pro&&d.pro.on)||d.verifiedPro)};
       state.me.creator=!!d.creator;
       CLOUD_KEYS.forEach(k=>{if(k==='pro'||k==='me')return;if(d[k]!==undefined)state[k]=d[k]});
       state.posts=[...(d.posts||[])].map(normalizeCloudPost);
@@ -1288,12 +1373,16 @@ async function loadCloudProfile(user){
       startPostsListener();
       await loadGlobalStories();
       startStoriesListener();
+      startGlobalCommerceListeners();
+      startLocationsListener();
+      await loadFaqs(); startFaqListener();
       startProfilesListener();
       startFollowListeners();
       startChatThreadsListener();
       publishPublicProfile();
-      state.products=[...(d.products||[])];
+      state.products=[...(d.products||[])].map(normalizeCloudProduct);
       state.cposts=[...(d.cposts||[])];
+      await migrateCommerceToFirestore();
       const now=Date.now();
       state.stories=(state.stories||[]).filter(s=>now-s.created<24*HOUR);
       try{localStorage.setItem(cacheKey,JSON.stringify(state));localStorage.setItem('barbergo_v6',JSON.stringify(state))}
@@ -1308,6 +1397,9 @@ async function loadCloudProfile(user){
       startPostsListener();
       await loadGlobalStories();
       startStoriesListener();
+      startGlobalCommerceListeners();
+      startLocationsListener();
+      await loadFaqs(); startFaqListener();
       startProfilesListener();
       startFollowListeners();
       startChatThreadsListener();
@@ -1340,6 +1432,9 @@ function initCloudAuth(){
       clearTimeout(syncT);
       clearTimeout(syncRetryT);
       stopStoriesListener();
+      stopGlobalCommerceListeners();
+      stopLocationsListener();
+      stopFaqListener();
       stopProfilesListener();
       stopFollowListeners();
       stopChatListener();
@@ -1399,9 +1494,9 @@ function fbErr(e){
 
 function publicUser(u){
   if(u==='me' || u===FBuid){
-    return {username:state.me.username||'kamu',name:state.me.name||'',av:state.me.av||'',cat:state.me.cat||'',bio:state.me.bio||'',link:state.me.link||'',bookLink:state.me.bookLink||'',creator:!!state.me.creator,pro:!!(state.pro&&state.pro.on),highlights:state.highlights||[],loc:(state.services[0]&&state.services[0].loc)||''};
+    return {username:state.me.username||'kamu',name:state.me.name||'',av:state.me.av||'',cat:state.me.cat||'',bio:state.me.bio||'',link:state.me.link||'',bookLink:state.me.bookLink||'',creator:!!state.me.creator,pro:!!(state.pro&&state.pro.on),verifiedPro:!!(state.pro&&state.pro.on),highlights:state.highlights||[],loc:(state.services[0]&&state.services[0].loc)||''};
   }
-  if(PUBLIC_PROFILES[u]){const x=PUBLIC_PROFILES[u];return USERS[u]={...(USERS[u]||{}),username:x.username||u,name:x.name||x.username||u,av:x.av||'',cat:x.cat||'',bio:x.bio||'',link:x.link||'',bookLink:x.bookLink||'',creator:!!x.creator,pro:!!x.pro,highlights:Array.isArray(x.highlights)?x.highlights:[],followers:FOLLOW_META[u]?.followers||[],follows:FOLLOW_META[u]?.following||[],stats:[(state.posts||[]).filter(x=>x.u===u||x.ownerUid===u).length,0,0]}}
+  if(PUBLIC_PROFILES[u]){const x=PUBLIC_PROFILES[u];return USERS[u]={...(USERS[u]||{}),username:x.username||u,name:x.name||x.username||u,av:x.av||'',cat:x.cat||'',bio:x.bio||'',link:x.link||'',bookLink:x.bookLink||'',creator:!!x.creator,pro:!!x.pro,loc:x.loc||'',lat:+(x.lat||0),lng:+(x.lng||0),highlights:Array.isArray(x.highlights)?x.highlights:[],followers:FOLLOW_META[u]?.followers||[],follows:FOLLOW_META[u]?.following||[],stats:[(state.posts||[]).filter(x=>x.u===u||x.ownerUid===u).length,0,0]}}
   if(USERS[u])return USERS[u];
   const p=(state.posts||[]).find(x=>(x.u===u || x.ownerUid===u) && x.author);
   if(p&&p.author){
@@ -1556,12 +1651,9 @@ const MAPBG=`<svg class="mapbg" viewBox="0 0 100 140" preserveAspectRatio="xMidY
 <path d="M0 52 H100 M36 0 V140 M64 0 V140" stroke="#232f3d" stroke-width="2.6"/></svg>`;
 function allPins(){
   const pins=[];
-  Object.entries(USERS).forEach(([k,u])=>{if(!u.stats)return;const c=cityXY(u.loc),[lat,lng]=xy2ll(c.x,c.y);
-    pins.push({id:'b:'+k,type:'barber',owner:k,name:u.name,branch:'Cabang Utama',loc:u.loc,x:c.x,y:c.y,lat,lng,rating:u.rating,ic:'user'});});
-  state.products.forEach((p,i)=>{if(p.owner==='me'&&!state.shopOn)return;if(!p.loc)return;const c=cityXY(p.loc),h=hashS(p.n),[lat,lng]=xy2ll(c.x+((h%50)/10-2.5),c.y+(((h>>3)%40)/10-2));
-    pins.push({id:'p:'+i,type:'product',owner:p.owner,name:p.n,branch:'Toko @'+uname(p.owner),loc:p.loc,x:c.x+((h%50)/10-2.5),y:c.y+(((h>>3)%40)/10-2),lat,lng,rating:p.r,ic:p.mi||'bag'});});
-  if(state.pro.on&&state.svcOn)state.services.forEach((s,i)=>{if(!s.loc)return;const c=cityXY(s.loc),h=hashS(s.n),[lat,lng]=xy2ll(c.x+((h%50)/10-2.5),c.y+(((h>>3)%40)/10-2));
-    pins.push({id:'s:'+i,type:'service',owner:'me',name:s.n,branch:'Layanan @'+state.me.username,loc:s.loc,x:c.x+((h%50)/10-2.5),y:c.y+(((h>>3)%40)/10-2),lat,lng,ic:s.mi||'scissors'});});
+  Object.entries(USERS).forEach(([k,u])=>{if(!u.stats)return;const loc=u.loc||'';const c=cityXY(loc),[lat,lng]=xy2ll(c.x,c.y);pins.push({id:'b:'+k,type:'barber',owner:k,name:u.name,branch:'Cabang Utama',loc,x:c.x,y:c.y,lat:u.lat??lat,lng:u.lng??lng,rating:u.rating,ic:'user'});});
+  state.products.forEach((p,i)=>{if(p.owner==='me'&&!state.shopOn)return;if(!p.loc&&!p.lat)return;const c=cityXY(p.loc||''),h=hashS(p.n),[lat,lng]=xy2ll(c.x+((h%50)/10-2.5),c.y+(((h>>3)%40)/10-2));pins.push({id:'p:'+(p.id||i),type:'product',owner:p.ownerUid||p.owner,name:p.n,branch:'Toko @'+uname(p.ownerUid||p.owner),loc:p.loc||'',x:c.x,y:c.y,lat:p.lat??lat,lng:p.lng??lng,rating:p.r,ic:p.mi||'bag'});});
+  state.services.forEach((s,i)=>{const owner=s.ownerUid||s.owner;if(!owner||owner==='me'&&(!state.pro.on||!state.svcOn))return;if(owner===FBuid&&!state.svcOn)return;if(!s.loc&&!s.lat)return;const c=cityXY(s.loc||''),h=hashS(s.n),[lat,lng]=xy2ll(c.x+((h%50)/10-2.5),c.y+(((h>>3)%40)/10-2));pins.push({id:'s:'+(s.id||i),type:'service',owner:owner,name:s.n,branch:'Layanan @'+uname(owner),loc:s.loc||'',x:c.x,y:c.y,lat:s.lat??lat,lng:s.lng??lng,ic:s.mi||'scissors'});});
   return pins;
 }
 function mkIcon(type,icName){
@@ -1620,14 +1712,25 @@ function openMapPick(cb){
     const q=e.target.value.trim().toLowerCase(),box=$('#fmAC');
     if(!q){box.hidden=true;return}
     const res=CITIES.filter(c=>c.n.toLowerCase().includes(q)).slice(0,6);
-    box.innerHTML=res.map(c=>{const [lat,lng]=cityLL(c.n);return `<button class="ac-row" data-fmcity="${esc(c.n)}" data-lat="${lat}" data-lng="${lng}">${I('pin','ic ic16')}<span>${esc(c.n)}</span></button>`}).join('');
-    box.hidden=!res.length;});
+    box.innerHTML=res.map(c=>{const [lat,lng]=cityLL(c.n);return `<button class="ac-row" data-fmcity="${esc(c.n)}" data-lat="${lat}" data-lng="${lng}">${I('pin','ic ic16')}<span>${esc(c.n)}</span><span class="sub">Kota</span></button>`}).join('');
+    box.hidden=!res.length;
+    clearTimeout(window.__bgFmSearchT);
+    window.__bgFmSearchT=setTimeout(async()=>{
+      try{
+        const places=await (await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&accept-language=id&limit=5&q='+encodeURIComponent(e.target.value.trim()),{headers:{'Accept':'application/json'}})).json();
+        const remote=(places||[]).map(x=>`<button class="ac-row" data-fmremote="1" data-lat="${esc(x.lat)}" data-lng="${esc(x.lon)}" data-label="${esc(x.display_name||x.name||'Lokasi')}">${I('pin','ic ic16')}<span><b>${esc(x.name||x.display_name||'Lokasi')}</b><small class="sub" style="display:block;margin-left:0">${esc(x.display_name||'')}</small></span></button>`).join('');
+        if(remote){box.insertAdjacentHTML('beforeend',remote);box.hidden=false;}
+      }catch(e){}
+    },300);
+  });
   o.addEventListener('click',e=>{
     const r=e.target.closest('[data-fmcity]');
     if(r){setPick(+r.dataset.lat,+r.dataset.lng,r.dataset.fmcity);$('#fmAC').hidden=true;$('#fmSearch').value=r.dataset.fmcity}
+    const rr=e.target.closest('[data-fmremote]');
+    if(rr){setPick(+rr.dataset.lat,+rr.dataset.lng,rr.dataset.label||'Lokasi');$('#fmAC').hidden=true;$('#fmSearch').value=rr.dataset.label||''}
   });
   $('#fmGps').onclick=()=>navigator.geolocation&&navigator.geolocation.getCurrentPosition(p=>setPick(p.coords.latitude,p.coords.longitude,'Lokasi GPS kamu'),()=>toast('Izin lokasi ditolak'),{timeout:8000});
-  $('#fmOk').onclick=e=>withLoad(e.target,500,()=>{const s=sel;o.remove();pickCB&&pickCB(s)});
+  $('#fmOk').onclick=e=>withLoad(e.target,500,async()=>{const s=sel;if(!s)return;await saveMapLocationRemote(s,'picker');o.remove();pickCB&&pickCB(s)});
 }
 function cityLL(loc){const c=cityXY(loc);return xy2ll(c.x,c.y)}
 
@@ -1917,7 +2020,7 @@ function scrProfile(){
 }
 function placeSheet(pin){
   const own=pin.owner==='me';
-  const svcs=pin.type!=='product'&&pin.owner==='me'?state.services:[];
+  const svcs=pin.type!=='product'?state.services.filter(s=>((s.ownerUid||s.owner)===pin.owner)&&s.active!==false):[];
   const prods=state.products.map((p,i)=>({p,i})).filter(({p})=>p.owner===pin.owner);
   openSheet(`<div class="c-head" style="padding:2px 0 10px">${av(pin.owner,44)}
     <div style="flex:1"><b style="font-size:14.5px">${esc(pin.name)}</b><span class="c-time">${pin.type==='barber'?'Barber':pin.type==='product'?'Toko':'Layanan'} · ${esc(pin.branch)}</span></div>
@@ -2196,7 +2299,7 @@ function scrBarber(id){
   if(!U || (!U.username && !U.name))return scrExplore();
   const posts=state.posts.filter(p=>p.u===id || p.ownerUid===id);
   const fol=!!state.follows[id];
-  const svc=(id==='me')?state.services:[];
+  const svc=state.services.filter(s=>((s.ownerUid||s.owner)===(id==='me'?FBuid:id)) && (id==='me'?state.svcOn:true) && s.active!==false);
   const highlights=Array.isArray(U.highlights)?U.highlights:[];
   return `<section class="screen">
   <header class="appbar">${backBtn}<div class="ab-title">@${esc(U.username||id)}</div><button class="ab-ic" data-share="barber" data-id="${esc(id)}">${I('send','ic ic20')}</button></header>
@@ -2274,6 +2377,11 @@ function proSectionHTML(){
     <ul class="check">${req.map(r=>`<li class="${r.ok?'ok':''}">${I(r.ok?'checkc':'circle')}${r.t}</li>`).join('')}</ul>
     <button class="btn ${allOk?'':'dis'}" data-proon style="margin-top:10px">Aktifkan Sekarang</button></div>`;
 }
+function scrFaq(){
+  const items=state.faqs&&state.faqs.length?state.faqs:FAQ_DEFAULT;
+  return `<section class="screen"><header class="appbar">${backBtn}<div class="ab-title">FAQ</div><span class="ab-sp"></span></header><div class="scrollcol" style="padding:12px 16px 30px"><p class="sub" style="margin:0 0 14px">Pertanyaan umum tentang akun, layanan, Marketplace, peta, Story, dan fitur BARBERGO.</p>${items.map((x,i)=>`<details class="cardish" style="margin-bottom:9px;padding:13px 14px" ${i===0?'open':''}><summary style="cursor:pointer;font-weight:800">${esc(x.q||x.question||'Pertanyaan')}</summary><p class="sub" style="margin:9px 0 0;line-height:1.55">${esc(x.a||x.answer||'')}</p></details>`).join('')}</div></section>`;
+}
+
 function scrSettings(){return `<section class="screen">
   <header class="appbar">${backBtn}<div class="ab-title">Pengaturan</div><span class="ab-sp"></span></header>
   <div class="scrollcol">
@@ -2288,7 +2396,7 @@ function scrSettings(){return `<section class="screen">
       <div class="menu-row" data-go="payments">${I('card')}Metode Pembayaran<span class="chev">${I('chev','ic ic18')}</span></div>
       <div class="menu-row" data-setrow="snd">${I('bell')}Suara Notifikasi<span class="switch${state.sndOn?' on':''}"></span></div>
       <div class="menu-row" data-setrow="vib">${I('sparkle')}Getar (Vibrasi)<span class="switch${state.vibOn?' on':''}"></span></div>
-      <div class="menu-row" data-toast="Membuka Pusat Bantuan">${I('help')}Bantuan &amp; FAQ<span class="chev">${I('chev','ic ic18')}</span></div>
+      <div class="menu-row" data-go="faq">${I('help')}Bantuan &amp; FAQ<span class="chev">${I('chev','ic ic18')}</span></div>
       <div class="menu-row danger" data-logout>${I('logout')}Keluar</div></div></div></section>`;
 }
 function scrEdit(){
@@ -2338,15 +2446,15 @@ function svcSheet(i){
     <div class="e-field"><label>Ikon Maps</label><select id="svI">${['scissors','pin','bag','star','store'].map(o=>`<option ${o===(s.mi||'scissors')?'selected':''}>${o}</option>`).join('')}</select></div>
     <div class="e-field"><label>Lokasi di Maps (wajib)</label><button class="btn-o" id="svLocBtn" style="padding:12px">${loc?esc(loc):'Pilih Lokasi di Maps'}</button></div>
     <div class="sh-actions"><button class="btn-o" data-close>Batal</button><button class="btn" id="svSave">Simpan</button></div>`);
-  $('#svLocBtn').onclick=()=>openMapPick(p=>{loc=p.name;$('#svLocBtn').textContent=p.name});
+  let locLat=s.lat||0,locLng=s.lng||0;
+  $('#svLocBtn').onclick=()=>openMapPick(p=>{loc=p.name;locLat=p.lat;locLng=p.lng;$('#svLocBtn').textContent=p.name});
   $('#svSave').onclick=e=>{
     const n=$('#svN').value.trim();
     if(!n){snd('cancel');toast('Nama layanan wajib diisi');return}
     if(!loc){snd('cancel');toast('Wajib pilih lokasi di maps');return}
     withLoad(e.target,700,()=>{
-      const obj={n,d:$('#svD').value.trim()||'-',p:+$('#svP').value||0,loc,mi:$('#svI').value};
-      if(i!=null)state.services[i]=obj;else state.services.push(obj);
-      save();snd('confirm');closeSheet();refresh();toast('Layanan tersimpan. Pin muncul di peta');});
+      const old=i!=null?state.services[i]:{};const obj={...old,n,d:$('#svD').value.trim()||'-',p:+$('#svP').value||0,loc,lat:+(locLat||old.lat||0),lng:+(locLng||old.lng||0),mi:$('#svI').value,active:true};
+      const finish=async()=>{const ok=await publishServiceCloud(obj);if(!ok)throw new Error('Firestore menolak layanan');if(i!=null)state.services[i]=obj;else state.services.push(obj);await publishPublicProfile();save();snd('confirm');closeSheet();refresh();toast('Layanan tersimpan di Firestore. Pin muncul di peta')};finish().catch(err=>{snd('cancel');toast('Gagal menyimpan layanan: '+fbErr(err))});});
   };
 }
 function prodSheet(i){
@@ -2385,16 +2493,16 @@ function prodSheet(i){
     const rm=e.target.closest('[data-prm]');
     if(rm){photos.splice(+rm.dataset.prm,1);draw();snd('cancel')}
   });
-  $('#prLocBtn').onclick=()=>openMapPick(pl=>{loc=pl.name;$('#prLocBtn').textContent=pl.name});
+  let locLat=p0.lat||0,locLng=p0.lng||0;
+  $('#prLocBtn').onclick=()=>openMapPick(pl=>{loc=pl.name;locLat=pl.lat;locLng=pl.lng;$('#prLocBtn').textContent=pl.name});
   $('#prSave').onclick=e=>{
     const n=$('#prN').value.trim();
     if(!n){snd('cancel');toast('Nama produk wajib diisi');return}
     if(photos.length<1){snd('cancel');toast('Minimal 1 foto produk wajib');return}
     if(!loc){snd('cancel');toast('Wajib pilih lokasi toko di maps');return}
     withLoad(e.target,700,()=>{
-      const obj={n,p:+$('#prP').value||0,cat:$('#prC').value,desc:$('#prDesc').value.trim(),loc,mi:p0.mi||'bag',owner:'me',r:p0.r||'Baru',c:p0.c||0,svg:p0.svg,photos:photos.slice(0,3)};
-      if(i!=null)state.products[i]=obj;else state.products.push(obj);
-      save();snd('confirm');closeSheet();refresh();toast('Produk tersimpan dengan '+Math.min(photos.length,3)+' foto');});
+      const old=i!=null?state.products[i]:{};const obj={...old,n,p:+$('#prP').value||0,cat:$('#prC').value,desc:$('#prDesc').value.trim(),loc,lat:+(locLat||old.lat||0),lng:+(locLng||old.lng||0),mi:p0.mi||'bag',owner:'me',ownerUid:FBuid,r:p0.r||'Baru',c:p0.c||0,svg:p0.svg,photos:photos.slice(0,3),active:true};
+      const finish=async()=>{const ok=await publishProductCloud(obj);if(!ok)throw new Error('Firestore menolak produk');if(i!=null)state.products[i]=obj;else state.products.push(obj);save();snd('confirm');closeSheet();refresh();toast('Produk tersimpan di Firestore dengan '+Math.min(photos.length,3)+' foto')};finish().catch(err=>{snd('cancel');toast('Gagal menyimpan produk: '+fbErr(err))});});
   };
 }
 function scrServices(){return `<section class="screen">
@@ -2454,7 +2562,7 @@ function scrHighlight(i){
     <button class="sv-zone l" data-dir="-1"></button><button class="sv-zone r" data-dir="1"></button>
     <div class="hl-cap"><span class="sv-av"><img src="${avSrc('me')}" alt=""></span>Highlight · ${esc(state.me.username||'kamu')}${vb('me')}</div></div></section>`;
 }
-const ROUTES={history:scrHistory,splash:scrSplash,onboarding:scrOnboarding,login:scrLogin,register:scrRegister,setup:scrSetup,home:scrHome,explore:scrExplore,maps:scrMaps,reels:scrReels,create:scrCreate,createstory:scrCreatestory,notif:scrNotif,profile:scrProfile,marketplace:scrMarketplace,community:scrCommunity,settings:scrSettings,edit:scrEdit,saved:scrSaved,followers:scrFollowers,following:scrFollowing,services:scrServices,products:scrProducts,payments:scrPayments,payment:scrPayment,messages:scrMessages};
+const ROUTES={history:scrHistory,splash:scrSplash,onboarding:scrOnboarding,login:scrLogin,register:scrRegister,setup:scrSetup,home:scrHome,explore:scrExplore,maps:scrMaps,reels:scrReels,create:scrCreate,createstory:scrCreatestory,notif:scrNotif,profile:scrProfile,marketplace:scrMarketplace,community:scrCommunity,settings:scrSettings,edit:scrEdit,saved:scrSaved,followers:scrFollowers,following:scrFollowing,services:scrServices,products:scrProducts,payments:scrPayments,payment:scrPayment,messages:scrMessages,faq:scrFaq};
 
 /* ============ ROUTER ============ */
 const view=$('#view'),navslot=$('#navslot'),sidebar=$('#sidebar'),shellEl=document.querySelector('.mainwrap');
@@ -2992,6 +3100,9 @@ document.addEventListener('click',e=>{
       try{if(window.BGF)await BGF.logout()}catch(e){}
       stopPostsListener();
       stopStoriesListener();
+      stopGlobalCommerceListeners();
+      stopLocationsListener();
+      stopFaqListener();
       stopProfilesListener();
       stopFollowListeners();
       stopChatListener();
@@ -3011,9 +3122,9 @@ document.addEventListener('click',e=>{
     confirmSheet('Nonaktifkan Akun Profesional?',()=>{state.pro.on=false;save();publishPublicProfile();refresh();toast('Kembali ke akun biasa')});return;
   }
   const stg=t.closest('[data-svctoggle]');
-  if(stg){state.svcOn=!state.svcOn;save();snd(state.svcOn?'confirm':'cancel');refresh();toast('Layanan '+(state.svcOn?'diaktifkan':'dinonaktifkan'));return}
+  if(stg){state.svcOn=!state.svcOn;save();publishPublicProfile();snd(state.svcOn?'confirm':'cancel');refresh();toast('Layanan '+(state.svcOn?'diaktifkan':'dinonaktifkan'));return}
   const shg=t.closest('[data-shoptoggle]');
-  if(shg){state.shopOn=!state.shopOn;save();snd(state.shopOn?'confirm':'cancel');refresh();toast('Toko '+(state.shopOn?'diaktifkan':'dinonaktifkan'));return}
+  if(shg){state.shopOn=!state.shopOn;save();publishPublicProfile();snd(state.shopOn?'confirm':'cancel');refresh();toast('Toko '+(state.shopOn?'diaktifkan':'dinonaktifkan'));return}
   const ftab=t.closest('[data-feedtab]');
   if(ftab){
     const mode=ftab.dataset.feedtab;
@@ -3181,17 +3292,17 @@ document.addEventListener('click',e=>{
   if(t.closest('#saveProfile')){withLoad(t.closest('#saveProfile'),700,saveProfile);return}
   if(t.closest('[data-topup]')){topupSheet();return}
   if(t.closest('[data-withdraw]')){withdrawSheet();return}
-  if(t.closest('[data-postmap]')){openMapPick(p=>{postLoc=p.name;$('#locChipTxt').textContent=p.name});return}
+  if(t.closest('[data-postmap]')){openMapPick(p=>{postLoc=p.name;window.__postLocGeo={lat:p.lat,lng:p.lng};$('#locChipTxt').textContent=p.name});return}
   const es=t.closest('[data-editsrv]');
   if(es){svcSheet(+es.dataset.editsrv);return}
   if(t.closest('[data-addsrv]')){svcSheet(null);return}
   const ds=t.closest('[data-delsrv]');
-  if(ds){confirmSheet('Hapus layanan ini?',()=>{state.services.splice(+ds.dataset.delsrv,1);save();refresh();toast('Layanan dihapus')});return}
+  if(ds){confirmSheet('Hapus layanan ini?',async()=>{const idx=+ds.dataset.delsrv,p=state.services[idx];try{if(p&&p.id)await deleteServiceCloud(p.id);state.services.splice(idx,1);save();refresh();toast('Layanan dihapus dari Firestore')}catch(e){toast('Gagal menghapus layanan: '+fbErr(e))}});return}
   const ep=t.closest('[data-editprod]');
   if(ep){prodSheet(+ep.dataset.editprod);return}
   if(t.closest('[data-addprod]')){prodSheet(null);return}
   const dpr=t.closest('[data-delprod]');
-  if(dpr){confirmSheet('Hapus produk ini?',()=>{state.products.splice(+dpr.dataset.delprod,1);save();refresh();toast('Produk dihapus')});return}
+  if(dpr){confirmSheet('Hapus produk ini?',async()=>{const idx=+dpr.dataset.delprod,p=state.products[idx];try{if(p&&p.id)await deleteProductCloud(p.id);state.products.splice(idx,1);save();refresh();toast('Produk dihapus dari Firestore')}catch(e){toast('Gagal menghapus produk: '+fbErr(e))}});return}
   if(t.closest('[data-addcard]')){
     openSheet(`<h3 class="sh-t">Tambah Kartu</h3>
       <div class="e-field"><label>Nomor Kartu</label><input id="cdN" placeholder="1234 5678 9012 3456"></div>
