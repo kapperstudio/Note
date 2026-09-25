@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#000000">
+<link rel="manifest" href="site.webmanifest">
 
 <!-- ===== SEO / META TAGS ===== -->
 <title>BARBERGO — Connect · Share · Grow | Komunitas &amp; Marketplace Barber Indonesia</title>
@@ -654,7 +655,7 @@ button.statb{cursor:pointer}
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,signInWithRedirect,getRedirectResult,GoogleAuthProvider,OAuthProvider,signOut,updateProfile,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import{getFirestore,doc,getDoc,setDoc,deleteDoc,collection,getDocs,onSnapshot,query,where,orderBy,limit}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import{getFirestore,doc,getDoc,setDoc,deleteDoc,collection,getDocs,onSnapshot,query,where,orderBy,limit,increment}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig={apiKey:"AIzaSyDb9KnG1MNGnS62UuZGZ6MIdGcIXmcwoVA",authDomain:"kapperstudio-c629c.firebaseapp.com",projectId:"kapperstudio-c629c",storageBucket:"kapperstudio-c629c.firebasestorage.app",messagingSenderId:"689372483921",appId:"1:689372483921:web:de297c0dd520b8a0f2c370",measurementId:"G-BWBJCSQQEF"};
 
@@ -867,6 +868,7 @@ function fresh(){return{
   balance:0,payMethod:'COD',cards:[],txs:[],
   services:[],products:[],cart:[],mapLocations:[],businessLocation:null,
   serviceSchedules:{}, paymentMethods:[],
+  messageCounts:{},notificationUnread:0,
   orders:[],
   cposts:[],
   prodReviews:{},svcReviews:[],
@@ -899,7 +901,7 @@ if(state){
 let FBuid=null,FBemail=null,syncT=null;
 let syncBusy=false,syncPending=false,syncRetry=0,syncRetryT=null,syncGeneration=0;
 let postsUnsub=null,cloudPostsReady=false;
-let profilesUnsub=null,followingUnsub=null,followersUnsub=null,chatUnsub=null,chatThreadsUnsub=null,storiesUnsub=null,productsUnsub=null,servicesUnsub=null,locationsUnsub=null,faqUnsub=null,schedulesUnsub=null,reviewsUnsub=null,financeUnsub=null,ordersUnsub=null;
+let profilesUnsub=null,followingUnsub=null,followersUnsub=null,chatUnsub=null,chatThreadsUnsub=null,storiesUnsub=null,productsUnsub=null,servicesUnsub=null,locationsUnsub=null,faqUnsub=null,schedulesUnsub=null,reviewsUnsub=null,financeUnsub=null,ordersUnsub=null,postStatsUnsub=null,notificationsUnsub=null;
 const PUBLIC_PROFILES={};
 const FOLLOW_META={};
 
@@ -935,7 +937,7 @@ function save(){
     syncT=setTimeout(()=>syncCloud(),1200);
   }
 }
-const CLOUD_KEYS=['me','gender','createdAt','setup','pro','svcOn','shopOn','balance','payMethod','cards','txs','services','cart','orders','followers','follows','likes','saves','frm','reviews','prodReviews','svcReviews','highlights','stories','expired','reelCmts','notifs','chats','unread','muted','sndOn','vibOn','reported','seen'];
+const CLOUD_KEYS=['me','gender','createdAt','setup','pro','svcOn','shopOn','balance','payMethod','cards','txs','services','cart','orders','followers','follows','likes','saves','frm','reviews','prodReviews','svcReviews','highlights','stories','expired','reelCmts','notifs','chats','unread','messageCounts','notificationUnread','muted','sndOn','vibOn','reported','seen'];
 function cloudPayload(){
   const d={updated:Date.now(),email:FBemail||'',creator:!!state.me.creator};
   CLOUD_KEYS.forEach(k=>d[k]=state[k]);
@@ -975,6 +977,7 @@ function authorSnapshot(){
     bio:state.me.bio||'',
     creator:!!state.me.creator,
     pro:!!(state.pro&&state.pro.on),
+    verifiedPro:!!(state.pro&&state.pro.on),
     link:state.me.link||'',
     bookLink:state.me.bookLink||'',
     highlights:Array.isArray(state.highlights)?JSON.parse(JSON.stringify(state.highlights)):[]
@@ -1185,7 +1188,7 @@ function startLocationsListener(){
 }
 function stopLocationsListener(){if(locationsUnsub){locationsUnsub();locationsUnsub=null}}
 /* ============ FIRESTORE: SCHEDULES / REVIEWS / PAYMENTS / HISTORY ============ */
-function normalizeSchedule(x){return {...x,days:Array.isArray(x.days)?x.days:[],open:String(x.open||'09:00'),close:String(x.close||'21:00'),active:x.active!==false}}
+function normalizeSchedule(x){return {...x,days:Array.isArray(x.days)?x.days:[],open:String(x.open||''),close:String(x.close||''),active:x.active===true}}
 function normalizeReview(x){return {...x,stars:Math.max(1,Math.min(5,+x.stars||0)),text:x.text||x.t||'',created:+(x.created||Date.now())}}
 function mergeSchedules(arr){const m={...(state.serviceSchedules||{})};(arr||[]).forEach(x=>{if(x.serviceId)m[x.serviceId]=normalizeSchedule(x)});state.serviceSchedules=m;saveLocalOnly()}
 async function saveServiceScheduleRemote(serviceId,data){
@@ -1195,7 +1198,7 @@ async function saveServiceScheduleRemote(serviceId,data){
 }
 function startSchedulesListener(){if(!BGF||!FBuid)return; if(schedulesUnsub)schedulesUnsub(); schedulesUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'serviceSchedules')),snap=>mergeSchedules(snap.docs.map(d=>({id:d.id,...d.data()}))),e=>fbErrorInfo(e,'onSnapshot/serviceSchedules'))}
 function stopSchedulesListener(){if(schedulesUnsub){schedulesUnsub();schedulesUnsub=null}}
-function scheduleForService(id){return normalizeSchedule((state.serviceSchedules||{})[id]||{serviceId:id,days:[],open:'09:00',close:'21:00',active:false})}
+function scheduleForService(id){return normalizeSchedule((state.serviceSchedules||{})[id]||{serviceId:id,days:[],open:'',close:'',active:false})}
 function scheduleHTML(sc){const days=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];return `<div>${days.map(d=>`<span class="schedule-chip ${sc.days.includes(d)?'ok':'off'}">${d}</span>`).join('')}<span class="schedule-chip ${sc.active&&sc.days.length?'ok':'off'}">${sc.active&&sc.days.length?esc(sc.open)+'–'+esc(sc.close):'Jadwal belum diatur'}</span></div>`}
 async function saveReviewRemote(order,stars,text){
   if(!BGF||!FBuid)throw new Error('Firestore belum siap');
@@ -1213,7 +1216,7 @@ async function saveOrderRemote(order){if(!BGF||!FBuid)throw new Error('Firestore
 function startFinancialListeners(){if(!BGF||!FBuid)return;if(financeUnsub)financeUnsub();financeUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'transactions'),BGF.where('ownerUid','==',FBuid)),snap=>{state.txs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updated||0)-(a.updated||0));saveLocalOnly()},e=>fbErrorInfo(e,'onSnapshot/transactions'));if(ordersUnsub)ordersUnsub();ordersUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'orders'),BGF.where('ownerUid','==',FBuid)),snap=>{state.orders=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updated||0)-(a.updated||0));saveLocalOnly()},e=>fbErrorInfo(e,'onSnapshot/orders'))}
 function stopFinancialListeners(){if(financeUnsub){financeUnsub();financeUnsub=null}if(ordersUnsub){ordersUnsub();ordersUnsub=null}}
 function validateServiceFields(n,p,d){return !!n&&Number(p)>=0&&!!d}
-function validateSchedule(sc){return !!sc.active&&Array.isArray(sc.days)&&sc.days.length>0&&/^([01]\\d|2[0-3]):[0-5]\\d$/.test(sc.open)&&/^([01]\\d|2[0-3]):[0-5]\\d$/.test(sc.close)&&sc.open<sc.close}
+function validateSchedule(sc){return Array.isArray(sc.days)&&sc.days.length>0&&/^([01]\d|2[0-3]):[0-5]\d$/.test(sc.open||'')&&/^([01]\d|2[0-3]):[0-5]\d$/.test(sc.close||'')&&sc.open<sc.close}
 const FAQ_DEFAULT=[
   {id:'what',q:'Apa itu BARBERGO?',a:'BARBERGO adalah komunitas dan marketplace untuk barber, barbershop, kreator grooming, booking layanan, dan produk barber.'},
   {id:'pro',q:'Apa itu akun profesional terverifikasi?',a:'Akun profesional menandakan profil barber atau barbershop yang mengaktifkan fitur profesional dan memenuhi persyaratan aplikasi.'},
@@ -1254,7 +1257,7 @@ function followButton(uid,mini=false){return `<button class="${mini?'mini-follow
 async function setFollowRemote(uid,on){
   if(!FBuid||!uid||uid===FBuid||!window.BGF)return false;
   const id=followDocId(FBuid,uid),ref=BGF.doc(BGF.db,'follows',id);
-  if(on)await BGF.setDoc(ref,{followerUid:FBuid,followeeUid:uid,created:Date.now()},{merge:true});else await BGF.deleteDoc(ref);
+  if(on){await BGF.setDoc(ref,{followerUid:FBuid,followeeUid:uid,created:Date.now()},{merge:true});await notifyRemote(uid,'follow',(state.me.username?'@'+state.me.username:'Seseorang')+' mulai mengikuti kamu')}else await BGF.deleteDoc(ref);
   return true;
 }
 async function loadFollowMeta(uid){
@@ -1273,7 +1276,7 @@ function startChatThreadsListener(){
   if(chatThreadsUnsub){try{chatThreadsUnsub()}catch(e){}chatThreadsUnsub=null}
   const ref=BGF.collection(BGF.db,'chatThreads');
   chatThreadsUnsub=BGF.onSnapshot(BGF.query(ref,BGF.where('participants','array-contains',FBuid)),snap=>{
-    snap.docs.forEach(d=>{const x=d.data(),other=(x.participants||[]).find(u=>u!==FBuid);if(!other)return;const m=x.lastMessage||{};state.chats[other]=[{k:m.senderUid===FBuid?'me':other,t:m.t||'',img:m.img||null,video:m.video||null,created:m.created||x.updated||0,id:'last'}];if(m.senderUid&&m.senderUid!==FBuid&&m.readBy!==FBuid)state.unread[other]=1});
+    snap.docs.forEach(d=>{const x=d.data(),other=(x.participants||[]).find(u=>u!==FBuid);if(!other)return;const m=x.lastMessage||{};state.messageCounts[other]=Number(x.messageCount||0);state.chats[other]=[{k:m.senderUid===FBuid?'me':other,t:m.t||'',img:m.img||null,video:m.video||null,created:m.created||x.updated||0,id:'last'}];if(m.senderUid&&m.senderUid!==FBuid&&m.readBy!==FBuid)state.unread[other]=1});
     saveLocalOnly();if(location.hash==='#/messages'){}
   },e=>fbErrorInfo(e,'onSnapshot/chatThreads'));
 }
@@ -1297,7 +1300,8 @@ async function sendChatRemote(other,msg){
   const data={senderUid:FBuid,receiverUid:other,t:msg.t||'',created:Date.now()};
   if(msg.img)data.img=msg.img;if(msg.video)data.video=msg.video;if(msg.embed)data.embed=msg.embed;if(msg.q)data.q=msg.q;
   await BGF.setDoc(BGF.doc(BGF.db,'chats',cid,'messages',id),data);
-  await BGF.setDoc(BGF.doc(BGF.db,'chatThreads',cid),{participants:[FBuid,other],lastMessage:{senderUid:FBuid,t:data.t||'',img:data.img||null,video:data.video||null,created:data.created,readBy:FBuid},updated:data.created},{merge:true});
+  await BGF.setDoc(BGF.doc(BGF.db,'chatThreads',cid),{participants:[FBuid,other],lastMessage:{senderUid:FBuid,t:data.t||'',img:data.img||null,video:data.video||null,created:data.created,readBy:FBuid},messageCount:increment(1),updated:data.created},{merge:true});
+  await notifyRemote(other,'message',(state.me.username?'@'+state.me.username:'Seseorang')+' mengirim pesan',cid);
   return true;
 }
 async function commentDocId(){return 'c'+Date.now()+Math.random().toString(36).slice(2,8)}
@@ -1308,6 +1312,7 @@ async function saveCommentRemote(postId,comment){
   const data={...comment,uid:FBuid,author:commentAuthorData(),created:Date.now(),updated:Date.now()};
   delete data._local; delete data.liked;
   await BGF.setDoc(BGF.doc(BGF.db,'posts',postId,'comments',id),data,{merge:false});
+  const pp=findPost(postId); const recipient=pp?.ownerUid&&pp.ownerUid!==FBuid?pp.ownerUid:(pp?.u&&pp.u!=='me'?pp.u:''); if(recipient)notifyRemote(recipient,'comment',(state.me.username?'@'+state.me.username:'Seseorang')+' mengomentari postinganmu',postId);
   comment._cloudId=id; comment.created=data.created; return true;
 }
 async function saveReplyRemote(postId,commentId,reply){
@@ -1330,6 +1335,42 @@ async function syncPostComments(p){
   try{const cs=await loadPostComments(p.id);if(cs.length||p.comments?.length){p.comments=cs;p.cm=cs.length;p._commentsCloud=true;renderCmts(p)}}catch(e){fbErrorInfo(e,'getDocs/posts/'+p.id+'/comments')}
 }
 
+async function savePostStatsRemote(postId,delta={}){
+  if(!window.BGF||!FBuid||!postId)return false;
+  const p=findPost(postId); const ref=BGF.doc(BGF.db,'postStats',String(postId));
+  const q={updated:Date.now(),ownerUid:p?.ownerUid||((p?.u&&p.u!=='me')?p.u:FBuid),likes:Math.max(0,+(delta.likes!=null?delta.likes:(p?.likes||0))),comments:Math.max(0,+(delta.comments!=null?delta.comments:(p?.cm||0)))};
+  try{await BGF.setDoc(ref,q,{merge:true});return true}catch(e){fbErrorInfo(e,'setDoc/postStats/'+postId);return false}
+}
+function startPostStatsListener(){
+  if(!window.BGF||!FBuid)return; if(postStatsUnsub)postStatsUnsub();
+  postStatsUnsub=BGF.onSnapshot(BGF.collection(BGF.db,'postStats'),snap=>{
+    snap.docs.forEach(d=>{const x=d.data()||{},p=findPost(d.id);if(p){if(Number.isFinite(x.likes))p.likes=Math.max(0,+x.likes);if(Number.isFinite(x.comments))p.cm=Math.max(0,+x.comments);$$(`[data-like=\"${d.id}\"] .cnt`).forEach(el=>el.textContent=fmt(p.likes||0));$$(`[data-postcm=\"${d.id}\"]`).forEach(el=>el.textContent=fmt(p.cm||0))}});
+    saveLocalOnly();
+  },e=>fbErrorInfo(e,'onSnapshot/postStats'));
+}
+function stopPostStatsListener(){if(postStatsUnsub){postStatsUnsub();postStatsUnsub=null}}
+async function seedPostStatsRemote(post){if(!window.BGF||!FBuid||!post?.id)return;try{await BGF.setDoc(BGF.doc(BGF.db,'postStats',post.id),{likes:+post.likes||0,comments:+post.cm||0,updated:Date.now(),ownerUid:post.ownerUid||FBuid},{merge:true})}catch(e){fbErrorInfo(e,'setDoc/postStats/'+post.id)}}
+async function notifyRemote(recipientUid,type,text,targetId='',extra={}){
+  if(!window.BGF||!FBuid||!recipientUid||recipientUid===FBuid)return false;
+  const id='n_'+FBuid+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const q={id,recipientUid,actorUid:FBuid,type:String(type||'system'),text:String(text||''),targetId:String(targetId||''),read:false,created:Date.now(),actor:commentAuthorData(),...extra};
+  try{await BGF.setDoc(BGF.doc(BGF.db,'notifications',recipientUid,'items',id),q,{merge:false});return true}catch(e){fbErrorInfo(e,'setDoc/notifications/'+recipientUid+'/'+id);return false}
+}
+function startNotificationsListener(){
+  if(!window.BGF||!FBuid)return; if(notificationsUnsub)notificationsUnsub();
+  notificationsUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'notifications',FBuid,'items'),BGF.orderBy('created','desc'),BGF.limit(100)),snap=>{
+    state.notifs=snap.docs.map(d=>{const x=d.data()||{};return {id:d.id,...x,u:x.actorUid,k:x.type||'system',t:x.text||'',time:x.created?timeAgo(x.created):'Baru saja',go:x.targetId?('post/'+x.targetId):''}});
+    state.notificationUnread=state.notifs.filter(x=>!x.read).length; state.notifSeen=state.notificationUnread===0; saveLocalOnly();
+    if(location.hash==='#/notif')render();
+  },e=>fbErrorInfo(e,'onSnapshot/notifications/'+FBuid));
+}
+function stopNotificationsListener(){if(notificationsUnsub){notificationsUnsub();notificationsUnsub=null}}
+async function markNotificationsRead(){
+  if(!window.BGF||!FBuid)return;
+  const unread=(state.notifs||[]).filter(n=>!n.read);
+  await Promise.all(unread.map(n=>BGF.setDoc(BGF.doc(BGF.db,'notifications',FBuid,'items',n.id),{read:true},{merge:true}).catch(()=>{})));
+  state.notifs=(state.notifs||[]).map(n=>({...n,read:true}));state.notificationUnread=0;state.notifSeen=true;saveLocalOnly();
+}
 async function submitReportRemote(targetId,reason){
   if(!window.BGF||!FBuid)return false;
   const id=FBuid+'_'+String(targetId||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,90)+'_'+Date.now();
@@ -1425,6 +1466,8 @@ async function loadCloudProfile(user){
       state.posts=[...(d.posts||[])].map(normalizeCloudPost);
       await loadGlobalPosts();
       startPostsListener();
+      startPostStatsListener();
+      startNotificationsListener();
       await loadGlobalStories();
       startStoriesListener();
       startGlobalCommerceListeners();
@@ -1450,6 +1493,8 @@ async function loadCloudProfile(user){
       state.me.name=user.displayName||state.me.name||'';
       state.posts=(state.posts||[]).map(normalizeCloudPost);
       startPostsListener();
+      startPostStatsListener();
+      startNotificationsListener();
       await loadGlobalStories();
       startStoriesListener();
       startGlobalCommerceListeners();
@@ -1488,6 +1533,8 @@ function initCloudAuth(){
       clearTimeout(syncT);
       clearTimeout(syncRetryT);
       stopStoriesListener();
+      stopPostStatsListener();
+      stopNotificationsListener();
       stopGlobalCommerceListeners();
       stopLocationsListener();
       stopSchedulesListener(); stopReviewsListener(); stopFinancialListeners();
@@ -1808,7 +1855,7 @@ function sbHTML(key){
   return `<button class="sb-brand" data-go="home"><span class="logo-b">B</span><span class="brand-txt">BARBERGO</span></button>
   ${it('home','home','Beranda')}${it('explore','compass','Jelajahi')}${it('marketplace','bag','Marketplace')}
   ${it('messages','chat','Pesan',u?`<i class="badge">${u}</i>`:'')}
-  ${it('notif','bell','Notifikasi',state.notifSeen?'':'<i class="ndot"></i>')}
+  ${it('notif','bell','Notifikasi',state.notificationUnread?'':'')}
   <button class="sb-create${key==='create'?' on':''}" data-go="create">${I('plus','ic ic20')}<span class="sb-label">Buat Post</span></button>
   <div class="sb-sep"></div>
   <button class="sb-item${key==='profile'?' on':''}" data-go="profile"><span class="sb-av"><img src="${avSrc('me')}" alt=""></span><span class="sb-label">Profil</span></button>
@@ -1873,13 +1920,14 @@ async function loadOnboardingProfiles(){
   if(onboardingLoading||!window.BGF)return; onboardingLoading=true;
   try{
     const snap=await BGF.getDocs(BGF.collection(BGF.db,'profiles'));
+    try{const ps=await BGF.getDocs(BGF.collection(BGF.db,'posts'));mergeCloudPosts(ps.docs.map(d=>({id:d.id,...d.data()})))}catch(e){console.warn('[BarberGo] onboarding posts unavailable',e)}
     const arr=snap.docs.map(d=>({uid:d.id,...d.data()})).filter(x=>x.uid&&x.username);
     for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
     ONBOARD_PROFILES=arr.slice(0,3);
     if(location.hash==='#/onboarding')render();
   }catch(e){console.warn('[BarberGo] onboarding profiles unavailable',e)}finally{onboardingLoading=false}
 }
-function onboardingUserCard(u){return `<div class="ob-card"><div class="ob-top">${av(u.uid,44)}<div class="ob-user"><b>${esc(u.username||u.uid)}</b><span>${esc(u.cat||'Barber')}</span></div><button class="follow-chip" data-follow="${esc(u.uid)}">${followLabel(u.uid)}</button>${I('send','ic ic18 dim')}</div><div class="ob-stats"><div class="stat"><b>${fmt(u.stats?.[0]||0)}</b><span>Post</span></div><div class="stat"><b>${fmt((FOLLOW_META[u.uid]?.followers||u.followers||[]).length)}</b><span>Followers</span></div><div class="stat"><b>${fmt((FOLLOW_META[u.uid]?.following||u.follows||[]).length)}</b><span>Following</span></div></div><div class="ob-grid">${(state.posts||[]).filter(p=>p.u===u.uid||p.ownerUid===u.uid).slice(0,6).map(p=>`<div class="ph"><img src="${p.vid?videoThumb(p.vid,p.img):SQR(p.img)}" loading="lazy" alt="" onerror="this.remove()"></div>`).join('')||'<div class="ob-empty" style="grid-column:1/-1"><b>Belum ada postingan</b><span>Profil ini belum mengunggah karya.</span></div>'}</div></div>`}
+function onboardingUserCard(u){const verified=(u.verifiedPro||u.pro||u.creator);const ps=(state.posts||[]).filter(p=>p.u===u.uid||p.ownerUid===u.uid).slice(0,6);return `<div class="ob-card"><div class="ob-top">${av(u.uid,44)}<div class="ob-user"><b>${esc(u.username||u.uid)}${verified?`<span class="vb" title="${u.creator?'Konten Kreator':'Akun Profesional'}"><svg class="ic"><use href="#i-${u.creator?'vgold':'vpro'}"></use></svg></span>`:''}</b><span>${esc(u.cat||'Barber')}</span></div><button class="follow-chip" data-follow="${esc(u.uid)}">${followLabel(u.uid)}</button>${I('send','ic ic18 dim')}</div><div class="ob-stats"><div class="stat"><b>${fmt(u.stats?.[0]||ps.length||0)}</b><span>Post</span></div><div class="stat"><b>${fmt((FOLLOW_META[u.uid]?.followers||u.followers||[]).length)}</b><span>Followers</span></div><div class="stat"><b>${fmt((FOLLOW_META[u.uid]?.following||u.follows||[]).length)}</b><span>Following</span></div></div><div class="ob-grid">${ps.map(p=>`<div class="ph" title="${esc(p.author?.username||u.username||'')}"><img src="${p.vid?videoThumb(p.vid,p.img):SQR(p.img)}" loading="lazy" alt="${esc(p.author?.name||u.name||u.username||'')}" onerror="this.remove()"></div>`).join('')||'<div class="ob-empty" style="grid-column:1/-1"><b>Belum ada postingan</b><span>Profil ini belum mengunggah karya.</span></div>'}</div></div>`}
 function scrOnboarding(){const u=ONBOARD_PROFILES[0];return `<section class="screen"><div class="ob-carousel" id="obCar"><div class="ob-slide"><div class="ob-head"><h2>Temukan<br>Barber Terbaik</h2><p>Jelajahi profil barber nyata yang terdaftar di BarberGo.</p></div>${u?onboardingUserCard(u):'<div class="ob-card"><div class="ob-empty"><b>Mencari profil BarberGo...</b><span>Data diambil langsung dari Firestore.</span></div></div>'}</div><div class="ob-slide"><div class="ob-head"><h2>Bagikan &amp;<br>Dapatkan Apresiasi</h2><p>Unggah hasil karya, dapatkan like dan komentar dari pengguna nyata.</p></div>${ONBOARD_PROFILES[1]?onboardingUserCard(ONBOARD_PROFILES[1]):'<div class="ob-card"><div class="ob-empty"><b>Konten nyata</b><span>Tidak ada akun atau statistik dummy.</span></div></div>'}</div></div><div class="dots" id="obDots"><i class="on"></i><i></i></div><button class="btn" data-next>Lanjut</button><button class="btn-o ob-skip" data-go="login">Lewati</button></section>`}
 function scrLogin(){return `<section class="screen"><div class="scrollcol">
   <div class="login-head"><div class="logo-b lb-lg">B</div><div class="brand sm">BARBERGO</div></div>
@@ -1970,7 +2018,7 @@ function newPostBanner(){
 function scrHome(){
   return `<section class="screen">
   <header class="appbar"><div class="ab-brand cursor" data-go="home">BARBERGO</div>
-    <button class="ab-ic" data-go="notif">${I('bell','ic ic22')}${state.notifSeen?'':'<i class="ndot"></i>'}</button>
+    <button class="ab-ic" data-go="notif">${I('bell','ic ic22')}${state.notificationUnread?' <i class="ndot"></i>':''}</button>
     <button class="ab-ic" data-go="messages">${I('chat','ic ic22')}${unreadCount()?'<i class="ndot"></i>':''}</button></header>
   ${newPostBanner()}
   <div class="story-row">${storyTiles()}</div>
@@ -2229,7 +2277,7 @@ function scrMessages(){return `<section class="screen">
   <div data-msel="list" id="msgList">
     ${THREADS().map(u=>{
       const th=state.chats[u]||[],last=th.length?th[th.length-1].t:'';
-      return `<div class="msg" data-go="chat/${u}" data-mk="${((USERS[u]||{}).cat||'').includes('Barber')?'barber':''}" data-search="${esc((uname(u)+' '+last).toLowerCase())}">${av(u,48)}<div class="m-txt"><b>${uname(u)}${vb(u)}</b><p>${esc(last)}</p></div><span class="m-time">${state.unread[u]?'<i class="mdot"></i>':''}</span></div>`}).join('')}</div>
+      return `<div class="msg" data-go="chat/${u}" data-mk="${((USERS[u]||{}).cat||'').includes('Barber')?'barber':''}" data-search="${esc((uname(u)+' '+last).toLowerCase())}">${av(u,48)}<div class="m-txt"><b>${uname(u)}${vb(u)}</b><p>${esc(last)}</p></div><span class="m-time">${state.unread[u]?'<i class="mdot"></i>':''}${state.messageCounts[u]?`<small>${fmt(state.messageCounts[u])}</small>`:''}</span></div>`}).join('')}</div>
   <div data-msel="orders" hidden>
     <div class="sec"><b>Orderan</b><span></span></div>
     ${state.orders.map(orderCard).join('')||'<div class="empty">Belum ada orderan.</div>'}
@@ -2257,7 +2305,7 @@ function embCard(url,emb){
 }
 function scrChat(id){
   if(chatUser!==id){chatUser=id;startChatListener(id)}
-  if(state.unread[id]){delete state.unread[id];save()}
+  if(state.unread[id]){delete state.unread[id];save();if(BGF&&FBuid){const cid=chatDocId(FBuid,id);BGF.setDoc(BGF.doc(BGF.db,'chatThreads',cid),{lastMessage:{readBy:FBuid}},{merge:true}).catch(()=>{})}}
   const th=state.chats[id]||[];
   const U=USERS[id];
   return `<section class="screen fixed">
@@ -2571,7 +2619,7 @@ function serviceScheduleSheet(i){
     <div class="e-field"><label>Status</label><button id="schActive" class="btn-o" style="width:100%">${old.active?'Aktif':'Nonaktif'}</button></div>
     <div id="schPreview">${scheduleHTML(old)}</div><div class="sh-actions"><button class="btn-o" data-close>Batal</button><button class="btn" id="schSave">Simpan Jadwal</button></div>`);
   let active=!!old.active;
-  const validate=()=>{const sc={days,open:$('#schOpen').value,close:$('#schClose').value,active};const ok=validateSchedule(sc);$('#schVal').textContent=ok?'Jadwal valid':'Pilih hari dan pastikan jam buka lebih awal dari jam tutup';$('#schVal').className=ok?'validation-ok':'validation-bad';$('#schPreview').innerHTML=scheduleHTML(sc);return ok};
+  const validate=()=>{const sc={days,open:$('#schOpen').value,close:$('#schClose').value,active};const ok=validateSchedule(sc);$('#schVal').textContent=ok?'Jadwal valid':'Pilih hari serta isi jam buka dan tutup dengan benar';$('#schVal').className=ok?'validation-ok':'validation-bad';$('#schPreview').innerHTML=scheduleHTML(sc);return ok};
   $$('#sheetOvl [data-day]').forEach(b=>b.onclick=()=>{const d=b.dataset.day;days=days.includes(d)?days.filter(x=>x!==d):[...days,d];b.classList.toggle('active',days.includes(d));validate()});
   $('#schOpen').oninput=validate;$('#schClose').oninput=validate;$('#schActive').onclick=()=>{active=!active;$('#schActive').textContent=active?'Aktif':'Nonaktif';validate()};
   $('#schSave').onclick=async e=>{const sc={days,open:$('#schOpen').value,close:$('#schClose').value,active};if(!validate()){snd('cancel');toast('Jadwal belum valid');return}try{await saveServiceScheduleRemote(s.id,sc);closeSheet();refresh();snd('confirm');toast('Jadwal tersimpan di Firestore')}catch(err){snd('cancel');toast('Gagal menyimpan jadwal: '+fbErr(err))}};
@@ -2700,7 +2748,7 @@ function render(){
   if(r==='product')fn=()=>scrProduct(param);
   if(r==='booking')fn=()=>scrBooking(param);
   if(!fn){location.replace('#/'+(authed?'home':'login'));return}
-  if(r==='notif'&&!state.notifSeen){state.notifSeen=true;save()}
+  if(r==='notif'&&!state.notifSeen){state.notifSeen=true;save();markNotificationsRead()}
   if(r==='home')feedBatch=4;
   resortReels();
   view.innerHTML=fn();
@@ -3075,7 +3123,7 @@ document.addEventListener('click',e=>{
         clearTimeout(feedTapTimer);feedTapStamp=0;feedTapId='';
         if(!state.likes[id]){
           state.likes[id]=1;post.likes=(post.likes||0)+1;post._pendingCloud=true;
-          save();publishPostCloud(post);snd('like');vibrate(25);
+          save();publishPostCloud(post);savePostStatsRemote(id,{likes:post.likes||0});const recipient=post.ownerUid&&post.ownerUid!==FBuid?post.ownerUid:(post.u&&post.u!=='me'?post.u:'');if(recipient)notifyRemote(recipient,'like',(state.me.username?'@'+state.me.username:'Seseorang')+' menyukai postinganmu',id);snd('like');vibrate(25);
           const burst=document.createElement('span');burst.className='burst';burst.innerHTML=I('heart');feedMedia.appendChild(burst);setTimeout(()=>burst.remove(),700);
           $$(`[data-like="${id}"]`).forEach(b=>{b.classList.add('liked');const c=b.querySelector('.cnt');if(c)c.textContent=fmt(post.likes)});
         }
@@ -3214,7 +3262,7 @@ document.addEventListener('click',e=>{
   const like=t.closest('[data-like]');
   if(like){
     const id=like.dataset.like,on=!state.likes[id],post=findPost(id);
-    if(on){state.likes[id]=1;if(post){post.likes=(post.likes||0)+1;post._pendingCloud=true}snd('like');vibrate(15)}else{delete state.likes[id];if(post){post.likes=Math.max(0,(post.likes||0)-1);post._pendingCloud=true}snd('cancel')}
+    if(on){state.likes[id]=1;if(post){post.likes=(post.likes||0)+1;post._pendingCloud=true;savePostStatsRemote(id,{likes:post.likes||0});const recipient=post.ownerUid&&post.ownerUid!==FBuid?post.ownerUid:(post.u&&post.u!=='me'?post.u:'');if(recipient)notifyRemote(recipient,'like',(state.me.username?'@'+state.me.username:'Seseorang')+' menyukai postinganmu',id)}snd('like');vibrate(15)}else{delete state.likes[id];if(post){post.likes=Math.max(0,(post.likes||0)-1);post._pendingCloud=true;savePostStatsRemote(id,{likes:post.likes||0})}snd('cancel')}
     save();if(post)publishPostCloud(post);
     $$(`[data-like="${id}"]`).forEach(b=>{b.classList.toggle('liked',on);const c=b.querySelector('.cnt');if(c)c.textContent=fmt(post?post.likes:getBase(id))});
     return;
@@ -3336,7 +3384,7 @@ document.addEventListener('click',e=>{
     const ukey=t.closest('#bkOk').dataset.bk||'me';
     const lines=t.closest('.sheet').querySelector('.bk-sum .lines');
     withLoad(t.closest('#bkOk'),900,async()=>{
-      try{const order={id:'o'+Date.now(),kind:'booking',title:uname(ukey)+' · '+(lines.querySelector('b').textContent.split('· ')[1]||'Haircut'),sub:lines.textContent.split('-')[0].replace(/^[^b]*b>/,'').trim()||'Jadwal booking',price:0,status:'Dikonfirmasi',time:'Baru saja',barberUid:ukey,serviceId:(state.services.find(x=>x.n===(lines.querySelector('b').textContent.split('· ')[1]||''))||{}).id||''};await saveOrderRemote(order);state.orders.unshift(order);state.notifs.unshift({k:'system',t:'Booking dikonfirmasi: '+lines.textContent.trim(),time:'Baru saja'});state.notifSeen=false;save();closeSheet();snd('book');vibrate();toast('Booking tersimpan di Firestore. Sampai jumpa')}catch(err){toast('Gagal menyimpan booking: '+fbErr(err))}});
+      try{const order={id:'o'+Date.now(),kind:'booking',title:uname(ukey)+' · '+(lines.querySelector('b').textContent.split('· ')[1]||'Haircut'),sub:lines.textContent.split('-')[0].replace(/^[^b]*b>/,'').trim()||'Jadwal booking',price:0,status:'Dikonfirmasi',time:'Baru saja',barberUid:ukey,serviceId:(state.services.find(x=>x.n===(lines.querySelector('b').textContent.split('· ')[1]||''))||{}).id||''};await saveOrderRemote(order);state.orders.unshift(order);if(ukey&&ukey!==FBuid)await notifyRemote(ukey,'booking',(state.me.username?'@'+state.me.username:'Seseorang')+' membuat booking layananmu',order.id);state.notifs.unshift({k:'system',t:'Booking dikonfirmasi: '+lines.textContent.trim(),time:'Baru saja'});state.notifSeen=false;save();closeSheet();snd('book');vibrate();toast('Booking tersimpan di Firestore. Sampai jumpa')}catch(err){toast('Gagal menyimpan booking: '+fbErr(err))}});
     return;
   }
   const co=t.closest('[data-cancelorder]');
@@ -3534,7 +3582,7 @@ async function addComment(){
       await saveReplyRemote(p.id,c._cloudId,r);c.replies=c.replies||[];c.replies.push(r);
       replyTo=null;$('#replyChip').hidden=true;$('#cmIn').placeholder='Tambahkan komentar...';
     }else{
-      await saveCommentRemote(p.id,now);p.comments=p.comments||[];p.comments.push(now);p.cm=p.comments.length;
+      await saveCommentRemote(p.id,now);p.comments=p.comments||[];p.comments.push(now);p.cm=p.comments.length;await savePostStatsRemote(p.id,{comments:p.cm});
     }
     inp.value='';snd('chatsend');renderCmts(p);toast('Komentar terkirim');
   }catch(e){snd('cancel');toast('Komentar gagal disimpan: '+fbErr(e))}
@@ -3557,7 +3605,7 @@ function publish(){
   const tags=(cap.match(/#[\w-]+/g)||[]).join(' ');
   const post={id,u:'me',img:createImg||('my'+(Date.now()%997)),vid:createVid,likes:0,cm:0,cap:cap||'',tags,comments:[],time:postDateTime(Date.now()),loc:postLoc||'',created:Date.now(),music:state.music?{...state.music}:null,author:authorSnapshot(),_pendingCloud:true};
   state.posts.unshift(post);rememberAuthor(post);save();
-  publishPostCloud(post).then(ok=>{if(ok){save();}});
+  publishPostCloud(post).then(async ok=>{if(ok){await savePostStatsRemote(post,{likes:post.likes||0,comments:post.cm||0});save();}});
   createImg=null;createVid=null;postLoc=null;state.music=null;snd('upload');vibrate(20);
   go('home');toast('Postingan berhasil dibagikan');
 }
