@@ -354,6 +354,13 @@ button.statb{cursor:pointer}
 .fm-foot{padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid #1c1c1c;background:#0f0f0f;position:relative;z-index:500}
 .fm-foot .locline{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;color:#ddd}
 .gpschip{position:absolute;right:12px;bottom:18px;z-index:500;width:42px;height:42px;border-radius:50%;background:#161616;border:1px solid #2c2c2c;display:flex;align-items:center;justify-content:center;color:#4da3ff;box-shadow:0 6px 16px rgba(0,0,0,.6)}
+.home-reco{padding:14px 14px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg)}
+.home-reco-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:13px}
+.home-reco-head b{font-size:14px}.home-reco-head span{color:var(--muted);font-size:11px}
+.home-reco-scroll{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px;scrollbar-width:none}
+.home-reco-scroll::-webkit-scrollbar{display:none}
+.home-reco-card{flex:0 0 150px;min-height:166px;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:12px;display:flex;flex-direction:column;align-items:center;text-align:center;scroll-snap-align:start}
+.home-reco-card .avatar{margin-bottom:7px}.home-reco-card b{font-size:12.5px;max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.home-reco-card small{color:var(--muted);font-size:10.5px;margin:3px 0 9px;max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.home-reco-card .follow-chip{width:100%;justify-content:center;margin-top:auto}
 .reels{background:#000}
 .reel-track{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none}
 .reel-track::-webkit-scrollbar{display:none}
@@ -378,6 +385,8 @@ button.statb{cursor:pointer}
 .ri-audio{display:flex;align-items:center;gap:6px;font-size:11px;color:#ddd;margin-top:8px}
 .rpause{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);color:#fff;z-index:6;opacity:0;pointer-events:none;transition:.15s}
 .reel.paused .rpause{opacity:.9}
+.story.paused .sv-bars b.run i{animation-play-state:paused}.story.paused .sv-img{filter:brightness(.92)}
+
 .rpause .ic{width:64px;height:64px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.7))}
 .burst{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%) scale(.4);color:var(--red);z-index:6;pointer-events:none;animation:bpop .7s ease forwards}
 .burst .ic{width:96px;height:96px;fill:currentColor;filter:drop-shadow(0 6px 24px rgba(255,68,88,.6))}
@@ -989,6 +998,11 @@ async function publishPostCloud(post){
     fbErrorInfo(e,'setDoc/posts/'+post.id);
     return false;
   }
+}
+async function deletePostCloud(id){
+  if(!window.BGF||!FBuid||!id)throw new Error('Firestore belum siap');
+  await BGF.deleteDoc(BGF.doc(BGF.db,'posts',id));
+  return true;
 }
 function mergeCloudPosts(arr){
   const map=new Map();
@@ -1651,10 +1665,10 @@ function postCard(p){
   const liked=!!state.likes[p.id],saved=!!state.saves[p.id],go=p.u==='me'?'profile':'barber/'+p.u;
   const dist=feedMode==='t'&&state.gps?`<span class="dstat"> · ${distU(p.u)} km</span>`:'';
   const hasMusic=!!(p.music&&p.music.preview);
-  const musicButton=hasMusic?`<button class="feed-mute" data-feed-mute="${p.id}" aria-label="Mute">${I(state.muted?'mute':'vol','ic ic18')}</button>`:'';
+  const musicButton=(p.vid||hasMusic)?`<button class="feed-mute" data-feed-mute="${p.id}" aria-label="${state.muted?'Unmute':'Mute'}">${I(state.muted?'mute':'vol','ic ic18')}</button>`:'';
   const musicAudio=hasMusic?`<audio class="feed-audio" data-feedaudio="${esc(p.music.preview)}" loop preload="auto" ${state.muted?'muted':''}></audio>`:'';
   const mediaClass='ph post-img feed-media'+(p.vid?' reel-feed-media':'');
-  const media=p.vid?`<video class="feed-video" data-feedvid="${esc(p.vid)}" poster="${esc(videoThumb(p.vid,p.img))}" muted loop playsinline preload="metadata"></video>`:`<img src="${PIC(p.img)}" loading="lazy" alt="" onerror="this.remove()">`;
+  const media=p.vid?`<video class="feed-video" data-feedvid="${esc(p.vid)}" poster="${esc(videoThumb(p.vid,p.img))}" ${state.muted?'muted':''} loop playsinline preload="metadata"></video>`:`<img src="${PIC(p.img)}" loading="lazy" alt="" onerror="this.remove()">`;
   return `<article class="post" data-u="${p.u}">
     <div class="post-head">
       ${av(p.u,36,`class="avatar sz36 cursor" data-go="${go}"`)}
@@ -1767,10 +1781,26 @@ function storyTiles(){
   return html;
 }
 let feedBatch=4;
+function homeRecommendations(){
+  const followed=new Set(Object.keys(state.follows||{}).filter(k=>state.follows[k]));
+  const pool=Object.entries(USERS).filter(([uid,u])=>uid!=='me'&&uid!==FBuid&&u&&u.username&&!followed.has(uid));
+  if(pool.length<2)return '';
+  const scored=pool.map(([uid,u])=>({uid,u,s:((FOLLOW_META[uid]?.followers||u.followers||[]).length*3)+(hashS(uid+String(state.seed||1))%37)})).sort((a,b)=>b.s-a.s);
+  const picks=scored.slice(0,5);
+  return `<section class="home-reco"><div class="home-reco-head"><b>Rekomendasi untuk kamu</b><span>Temukan barber baru</span></div><div class="home-reco-scroll">${picks.map(({uid,u})=>`<div class="home-reco-card">${av(uid,58,`class="avatar sz58 cursor" data-go="barber/${uid}"`)}<b data-go="barber/${uid}">${esc(u.username)}${vb(uid)}</b><small>${esc(u.cat||'Barber')}</small>${followButton(uid,true)}</div>`).join('')}</div></section>`;
+}
+function shouldShowHomeReco(index){
+  if(index<2)return false;
+  const seed=String(state.seed||1);
+  const slot=Math.floor(index/2);
+  return hashS(seed+'reco-'+slot)%7===0 || (index===3 && hashS(seed+'reco-main')%3===0);
+}
 function feedHTML(){
   const arr=rankedFeed(feedMode);
   const items=arr.slice(0,feedBatch);
-  return items.map(postCard).join('')+(feedBatch<arr.length?'<div id="feedSent" style="height:12px"></div>':'<div class="empty">Kamu sudah melihat semua postingan</div>');
+  let out='';
+  items.forEach((p,i)=>{out+=postCard(p);if(shouldShowHomeReco(i+1))out+=homeRecommendations()});
+  return out+(feedBatch<arr.length?'<div id="feedSent" style="height:12px"></div>':'<div class="empty">Kamu sudah melihat semua postingan</div>');
 }
 function newPostBanner(){
   const latest=(state.posts||[]).filter(p=>(p.created||0)>(state.feedSeenAt||0)).length;
@@ -1803,7 +1833,7 @@ function scrExplore(){
   <div class="sec"><b>Barber Populer</b><span data-go="maps">Lihat peta</span></div>
   <div class="b-cards">${users.map(([k,u])=>`<div class="b-card"><span class="avatar sz56"><img src="${SQR(u.av||k)}" loading="lazy" alt="" onerror="this.remove()"></span><b data-go="barber/${k}">${esc(u.username)}${vb(k)}</b><span>${esc(u.cat||'Barber')}</span>${k!==FBuid?followButton(k,true):''}</div>`).join('')||'<div class="empty">Belum ada profil publik.</div>'}</div>
   <div class="sec"><b>Postingan Untukmu</b><span>${posts.length} konten</span></div>
-  <div class="grid3" style="padding-bottom:20px">${posts.slice(0,30).map(p=>`<div class="ph${p.vid?' rl':''}" data-go="post/${p.id}"><img src="${SQR(p.img)}" loading="lazy" alt="" onerror="this.remove()">${p.vid?'<span class="pl">'+I('play','ic ic12')+'Reel</span>':''}</div>`).join('')||'<div class="empty" style="grid-column:1/-1">Belum ada postingan publik.</div>'}</div></section>`;
+  <div class="grid3" style="padding-bottom:20px">${posts.slice(0,30).map(p=>`<div class="ph${p.vid?' rl':''}" data-go="post/${p.id}"><img src="${esc(p.vid?videoThumb(p.vid,p.img):SQR(p.img))}" loading="lazy" alt="" onerror="this.onerror=null;this.src='${esc(SQR(p.img))}'">${p.vid?'<span class="pl">'+I('play','ic ic12')+'Reel</span>':''}</div>`).join('')||'<div class="empty" style="grid-column:1/-1">Belum ada postingan publik.</div>'}</div></section>`;
 }
 function scrMaps(){
   return `<section class="screen fixed">
@@ -2441,7 +2471,7 @@ function wireFade(){
 }
 function wireFeed(){
   if(feedIO){feedIO.disconnect();feedIO=null}
-  $$('.feed-video').forEach(v=>{const src=v.dataset.feedvid;if(src&&!v.src)v.src=src});
+  $$('.feed-video').forEach(v=>{const src=v.dataset.feedvid;if(src&&!v.src)v.src=src;v.muted=!!state.muted});
   $$('.feed-audio').forEach(a=>{const src=a.dataset.feedaudio;if(src&&!a.src)a.src=src;a.muted=!!state.muted});
   const mediaEls=$$('.feed-media');
   const playMedia=el=>{
@@ -2543,16 +2573,26 @@ function openViewer(slides,u,label){
     <div class="sv-row"><span class="sv-av"><img src="${avSrc(u)}" alt=""></span><b>${uname(u)}${vb(u)}</b><span>${label}</span><button class="sv-x" id="svX">${I('x','ic ic20')}</button></div></div>
     <button class="sv-zone l" data-dir="-1"></button><button class="sv-zone r" data-dir="1"></button>`;
   shellEl.appendChild(o);
-  const bars=$$('.sv-bars b',o),img=$('.sv-img',o);let idx=0;
-  const close=()=>{clearTimeout(storyTimer);o.remove()};
+  const bars=$$('.sv-bars b',o),img=$('.sv-img',o);let idx=0,paused=false,remaining=4200,startedAt=Date.now();
+  const clearTimer=()=>{clearTimeout(storyTimer);storyTimer=null};
+  const schedule=()=>{clearTimer();startedAt=Date.now();storyTimer=setTimeout(()=>show(idx+1),remaining)};
+  const pause=()=>{if(paused)return;paused=true;remaining=Math.max(0,remaining-(Date.now()-startedAt));clearTimer();o.classList.add('paused')};
+  const resume=()=>{if(!paused)return;paused=false;o.classList.remove('paused');schedule()};
+  const close=()=>{clearTimer();o.remove()};
   const show=i=>{
     if(i>=slides.length)return close();
     if(i<0)i=0;idx=i;img.src=PIC(slides[i]);
     bars.forEach((b,j)=>b.className=j<i?'done':(j===i?'run':''));
-    clearTimeout(storyTimer);storyTimer=setTimeout(()=>show(idx+1),4200);};
-  o.addEventListener('click',e=>{if(e.target.closest('#svX'))return close();const z=e.target.closest('.sv-zone');if(z)show(idx+ +z.dataset.dir)});
+    remaining=4200;schedule();
+  };
+  o.addEventListener('pointerdown',e=>{if(e.target.closest('#svX'))return;pause()});
+  o.addEventListener('pointerup',e=>{if(e.target.closest('#svX'))return;resume()});
+  o.addEventListener('pointercancel',resume);
+  o.addEventListener('pointerleave',resume);
+  o.addEventListener('click',e=>{if(e.target.closest('#svX'))return close();if(paused)return;const z=e.target.closest('.sv-zone');if(z)show(idx+ +z.dataset.dir)});
   show(0);
 }
+
 function openStory(u){
   const key=(u==='me'||u===FBuid)?'me':u;
   const stories=(state.stories||[]).filter(s=>s.u===key||s.ownerUid===u).sort((a,b)=>b.created-a.created);
@@ -2849,7 +2889,7 @@ document.addEventListener('click',e=>{
   const np=t.closest('[data-newposts]');
   if(np){state.feedSeenAt=Date.now();state.seed=Date.now();feedBatch=4;snd('refresh');refresh();return}
   const fm=t.closest('[data-feed-mute]');
-  if(fm){const media=fm.closest('.feed-media');if(media){const a=media.querySelector('.feed-audio');const v=media.querySelector('video');const muted=!(a? !a.muted : (v?!v.muted:true));state.muted=muted;if(a)a.muted=muted;if(v)v.muted=true;fm.innerHTML=I(muted?'mute':'vol','ic ic18');if(a)a.play().catch(()=>{});save()}return}
+  if(fm){const media=fm.closest('.feed-media');if(media){const a=media.querySelector('.feed-audio');const v=media.querySelector('video');const muted=!(v?v.muted:(a?!a.muted:true));state.muted=muted;if(v)v.muted=muted;if(a)a.muted=muted;$$('[data-feed-mute]').forEach(b=>{b.innerHTML=I(muted?'mute':'vol','ic ic18');b.setAttribute('aria-label',muted?'Unmute':'Mute')});if(v)v.play().catch(()=>{});if(a)a.play().catch(()=>{});save()}return}
   const mr=t.closest('[data-music-id]');
   if(mr){state.music={id:mr.dataset.musicId,title:mr.dataset.musicTitle,artist:mr.dataset.musicArtist,art:mr.dataset.musicArt,preview:mr.dataset.musicPreview||''};const picked=$('#musicPicked');if(picked){picked.hidden=false;picked.innerHTML=`${I('music','ic ic16')} <b>${esc(state.music.title)}</b> · ${esc(state.music.artist)} ${state.music.preview?`<audio controls src="${esc(state.music.preview)}" style="width:100%;max-width:210px;height:28px"></audio>`:''}<button id="musicClear">×</button>`};$('#musicAC').innerHTML='';return}
   if(t.closest('#musicClear')){state.music=null;const x=$('#musicPicked');if(x)x.hidden=true;return}
@@ -3082,7 +3122,7 @@ document.addEventListener('click',e=>{
   const rep=t.closest('[data-report]');
   if(rep){reportSheet(rep.dataset.report);return}
   const dp=t.closest('[data-delpost]');
-  if(dp){confirmSheet('Hapus postingan ini?',()=>{state.posts=state.posts.filter(p=>p.id!==dp.dataset.delpost);save();go('profile');toast('Postingan dihapus')});return}
+  if(dp){const id=dp.dataset.delpost;confirmSheet('Hapus postingan ini?',async()=>{const p=findPost(id);if(!p||p.u!=='me'||p.ownerUid!==FBuid){toast('Postingan tidak dapat dihapus');return}try{await deletePostCloud(id);state.posts=state.posts.filter(x=>x.id!==id);delete state.likes[id];delete state.saves[id];save();go('profile');snd('confirm');toast('Postingan dihapus')}catch(err){snd('cancel');toast('Gagal menghapus postingan: '+fbErr(err))}});return}
   if(t.closest('#cartBtn')){
     const items=state.cart,total=items.reduce((a,b)=>a+b.p,0);
     openSheet(`<h3 class="sh-t">Keranjang</h3>
