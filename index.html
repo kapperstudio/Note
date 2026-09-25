@@ -67,6 +67,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
+*{-webkit-tap-highlight-color:rgba(0,0,0,0)!important;-webkit-focus-ring-color:transparent!important}
+button,input,textarea,select,a,[role="button"]{outline:0!important;transition:none!important}
+button:active,input:active,textarea:active,select:active,a:active,[role="button"]:active{outline:0!important;box-shadow:none!important}
 :root{--bg:#0b0b0b;--screen:#050505;--card:#121212;--line:#232323;--txt:#f4f4f4;--muted:#9b9b9b;--dim:#6e6e6e;--red:#ff4458}
 *{box-sizing:border-box;margin:0;padding:0}
 button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -105,7 +108,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',syste
 .nav-av img{width:100%;height:100%;object-fit:cover;display:block}
 .nav-av.on{border-color:#fff}
 .nv-plus{width:42px;height:42px;border-radius:50%;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;margin-top:2px;flex:0 0 auto}
-.screen{display:flex;flex-direction:column;min-height:100%;animation:scrIn .25s ease}
+.screen{display:flex;flex-direction:column;min-height:100%;animation:none!important;transition:none!important}
 .screen.fixed{height:100%;overflow:hidden}
 @keyframes scrIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .scrollcol{flex:1;overflow-y:auto;scrollbar-width:none}
@@ -669,6 +672,9 @@ window.dispatchEvent(new Event("bgf-ready"));
 </script>
 
 <style>
+*{-webkit-tap-highlight-color:rgba(0,0,0,0)!important;-webkit-focus-ring-color:transparent!important}
+button,input,textarea,select,a,[role="button"]{outline:0!important;transition:none!important}
+button:active,input:active,textarea:active,select:active,a:active,[role="button"]:active{outline:0!important;box-shadow:none!important}
 .new-post-banner{width:calc(100% - 24px);margin:8px 12px;padding:10px 12px;border:1px solid #333;border-radius:12px;background:#17191d;color:#fff;display:flex;align-items:center;gap:8px;text-align:left}.new-post-banner span{font-size:11px;color:#aaa;margin-left:auto}.feed-mute{position:absolute;right:10px;bottom:10px;width:34px;height:34px;border:0;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;z-index:4}.music-box{margin:14px 0;padding:12px;border:1px solid #2a2d33;border-radius:14px;background:#111318}.music-head{display:flex;align-items:center;gap:7px;margin-bottom:9px}.music-head span{margin-left:auto;font-size:11px}.music-search{margin:0}.music-results{max-height:220px;overflow:auto}.music-result{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid #25272c;cursor:pointer}.music-result img{width:42px;height:42px;border-radius:7px;object-fit:cover}.music-result b{display:block;font-size:12px}.music-result small{color:#999}.music-picked{margin-top:9px;font-size:12px;display:flex;align-items:center;gap:6px}.music-picked button{margin-left:auto;border:0;background:none;color:#aaa;font-size:18px}
 </style>
 </head>
@@ -999,7 +1005,7 @@ function startPostsListener(){
       mergeCloudPosts(arr);
       cloudPostsReady=true;
       try{localStorage.setItem('barbergo_v6_'+FBuid,JSON.stringify(state))}catch(e){}
-      if(location.hash==='#/home'||location.hash==='#/explore'||location.hash.startsWith('#/barber/'))refresh();
+      if(location.hash==='#/home'||location.hash==='#/explore'||location.hash.startsWith('#/barber/')){}
     },e=>fbErrorInfo(e,'onSnapshot/posts'));
   }catch(e){fbErrorInfo(e,'startPostsListener/posts')}
 }
@@ -1027,15 +1033,15 @@ function applyPublicProfiles(arr){
 function startProfilesListener(){
   if(!window.BGF||!FBuid)return;
   if(profilesUnsub){profilesUnsub();profilesUnsub=null}
-  profilesUnsub=BGF.onSnapshot(BGF.collection(BGF.db,'profiles'),snap=>{applyPublicProfiles(snap.docs.map(d=>({uid:d.id,...d.data()})));if(location.hash.startsWith('#/barber/')||location.hash==='#/explore')refresh()},e=>fbErrorInfo(e,'onSnapshot/profiles'));
+  profilesUnsub=BGF.onSnapshot(BGF.collection(BGF.db,'profiles'),snap=>{applyPublicProfiles(snap.docs.map(d=>({uid:d.id,...d.data()})));if(location.hash.startsWith('#/barber/')||location.hash==='#/explore'){}},e=>fbErrorInfo(e,'onSnapshot/profiles'));
 }
 function stopProfilesListener(){if(profilesUnsub){try{profilesUnsub()}catch(e){}profilesUnsub=null}}
 function startFollowListeners(){
   if(!window.BGF||!FBuid)return;
   [followingUnsub,followersUnsub].forEach(u=>{if(u)try{u()}catch(e){}}); followingUnsub=followersUnsub=null;
   const base=BGF.collection(BGF.db,'follows');
-  followingUnsub=BGF.onSnapshot(BGF.query(base,BGF.where('followerUid','==',FBuid)),snap=>{const ids=[];snap.forEach(d=>{const x=d.data();if(x.followeeUid&&x.followeeUid!==FBuid)ids.push(x.followeeUid)});state.follows=Object.fromEntries(ids.map(id=>[id,1]));FOLLOW_META[FBuid]={...(FOLLOW_META[FBuid]||{}),following:ids};saveLocalOnly();if(location.hash==='#/profile'||location.hash==='#/following')refresh()},e=>fbErrorInfo(e,'onSnapshot/follows-following'));
-  followersUnsub=BGF.onSnapshot(BGF.query(base,BGF.where('followeeUid','==',FBuid)),snap=>{const ids=[];snap.forEach(d=>{const x=d.data();if(x.followerUid&&x.followerUid!==FBuid)ids.push(x.followerUid)});state.followers=ids;FOLLOW_META[FBuid]={...(FOLLOW_META[FBuid]||{}),followers:ids};saveLocalOnly();if(location.hash==='#/profile'||location.hash==='#/followers')refresh()},e=>fbErrorInfo(e,'onSnapshot/follows-followers'));
+  followingUnsub=BGF.onSnapshot(BGF.query(base,BGF.where('followerUid','==',FBuid)),snap=>{const ids=[];snap.forEach(d=>{const x=d.data();if(x.followeeUid&&x.followeeUid!==FBuid)ids.push(x.followeeUid)});state.follows=Object.fromEntries(ids.map(id=>[id,1]));FOLLOW_META[FBuid]={...(FOLLOW_META[FBuid]||{}),following:ids};saveLocalOnly();if(location.hash==='#/profile'||location.hash==='#/following'){}},e=>fbErrorInfo(e,'onSnapshot/follows-following'));
+  followersUnsub=BGF.onSnapshot(BGF.query(base,BGF.where('followeeUid','==',FBuid)),snap=>{const ids=[];snap.forEach(d=>{const x=d.data();if(x.followerUid&&x.followerUid!==FBuid)ids.push(x.followerUid)});state.followers=ids;FOLLOW_META[FBuid]={...(FOLLOW_META[FBuid]||{}),followers:ids};saveLocalOnly();if(location.hash==='#/profile'||location.hash==='#/followers'){}},e=>fbErrorInfo(e,'onSnapshot/follows-followers'));
 }
 function stopFollowListeners(){[followingUnsub,followersUnsub].forEach(u=>{if(u)try{u()}catch(e){}});followingUnsub=followersUnsub=null}
 function saveLocalOnly(){try{localStorage.setItem('barbergo_v6',JSON.stringify(state))}catch(e){}}
@@ -1059,7 +1065,7 @@ async function loadFollowMeta(uid){
     const followers=a.docs.map(d=>d.data().followerUid).filter(Boolean),following=b.docs.map(d=>d.data().followeeUid).filter(Boolean);
     FOLLOW_META[uid]={followers,following};
     if(USERS[uid]){USERS[uid].followers=followers;USERS[uid].follows=following}
-    if(location.hash==='#/barber/'+uid)refresh();
+    if(location.hash==='#/barber/'+uid){}
   }catch(e){fbErrorInfo(e,'getDocs/follows/'+uid)}
 }
 function startChatThreadsListener(){
@@ -1068,7 +1074,7 @@ function startChatThreadsListener(){
   const ref=BGF.collection(BGF.db,'chatThreads');
   chatThreadsUnsub=BGF.onSnapshot(BGF.query(ref,BGF.where('participants','array-contains',FBuid)),snap=>{
     snap.docs.forEach(d=>{const x=d.data(),other=(x.participants||[]).find(u=>u!==FBuid);if(!other)return;const m=x.lastMessage||{};state.chats[other]=[{k:m.senderUid===FBuid?'me':other,t:m.t||'',img:m.img||null,video:m.video||null,created:m.created||x.updated||0,id:'last'}];if(m.senderUid&&m.senderUid!==FBuid&&m.readBy!==FBuid)state.unread[other]=1});
-    saveLocalOnly();if(location.hash==='#/messages')refresh();
+    saveLocalOnly();if(location.hash==='#/messages'){}
   },e=>fbErrorInfo(e,'onSnapshot/chatThreads'));
 }
 function stopChatThreadsListener(){if(chatThreadsUnsub){try{chatThreadsUnsub()}catch(e){}chatThreadsUnsub=null}
@@ -1094,6 +1100,36 @@ async function sendChatRemote(other,msg){
   await BGF.setDoc(BGF.doc(BGF.db,'chatThreads',cid),{participants:[FBuid,other],lastMessage:{senderUid:FBuid,t:data.t||'',img:data.img||null,video:data.video||null,created:data.created,readBy:FBuid},updated:data.created},{merge:true});
   return true;
 }
+async function commentDocId(){return 'c'+Date.now()+Math.random().toString(36).slice(2,8)}
+function commentAuthorData(){return {uid:FBuid,username:state.me.username||'',name:state.me.name||'',av:state.me.av||'',cat:state.me.cat||''}}
+async function saveCommentRemote(postId,comment){
+  if(!window.BGF||!FBuid||!postId||!comment)return false;
+  const id=await commentDocId();
+  const data={...comment,uid:FBuid,author:commentAuthorData(),created:Date.now(),updated:Date.now()};
+  delete data._local; delete data.liked;
+  await BGF.setDoc(BGF.doc(BGF.db,'posts',postId,'comments',id),data,{merge:false});
+  comment._cloudId=id; comment.created=data.created; return true;
+}
+async function saveReplyRemote(postId,commentId,reply){
+  if(!window.BGF||!FBuid||!postId||!commentId||!reply)return false;
+  const id=await commentDocId();
+  const data={...reply,uid:FBuid,author:commentAuthorData(),created:Date.now(),updated:Date.now(),parentId:commentId};
+  delete data._local; delete data.liked;
+  await BGF.setDoc(BGF.doc(BGF.db,'posts',postId,'comments',commentId,'replies',id),data,{merge:false});
+  reply._cloudId=id; reply.created=data.created; return true;
+}
+function normalizeRemoteComment(d){const x={id:d.id,_cloudId:d.id,...d.data()};const a=x.author||{};x.u=x.uid||a.uid||x.u||'';if(!x.time)x.time=postDateTime(x.created||Date.now());x.likes=Number.isFinite(x.likes)?x.likes:0;x.replies=[];return x}
+async function loadPostComments(postId){
+  if(!window.BGF||!FBuid||!postId)return [];
+  const snap=await BGF.getDocs(BGF.collection(BGF.db,'posts',postId,'comments'));
+  const out=[];
+  for(const d of snap.docs){const c=normalizeRemoteComment(d);const rs=await BGF.getDocs(BGF.collection(BGF.db,'posts',postId,'comments',d.id,'replies'));c.replies=rs.docs.map(normalizeRemoteComment).sort((a,b)=>(a.created||0)-(b.created||0));out.push(c)}
+  return out.sort((a,b)=>(a.created||0)-(b.created||0));
+}
+async function syncPostComments(p){
+  try{const cs=await loadPostComments(p.id);if(cs.length||p.comments?.length){p.comments=cs;p.cm=cs.length;p._commentsCloud=true;renderCmts(p)}}catch(e){fbErrorInfo(e,'getDocs/posts/'+p.id+'/comments')}
+}
+
 async function submitReportRemote(targetId,reason){
   if(!window.BGF||!FBuid)return false;
   const id=FBuid+'_'+String(targetId||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,90)+'_'+Date.now();
@@ -1255,7 +1291,7 @@ function initCloudAuth(){
     }
   });
 }
-(function waitBGF(){window.BGF?initCloudAuth():setTimeout(waitBGF,120)})();
+(function waitBGF(){if(window.BGF){initCloudAuth();loadOnboardingProfiles()}else setTimeout(waitBGF,120)})();
 
 /* ===== CLOUDINARY UPLOAD (cloud o9nnrrra, preset Barbergo) ===== */
 const CLOUDINARY={cloud:'o9nnrrra',preset:'Barbergo'};
@@ -1568,16 +1604,19 @@ function scrSplash(){return `<section class="screen s-splash">
   <div class="splash-bottom"><p>Temukan barber terbaik, lihat karya mereka, dan jadi bagian dari komunitas.</p>
     <button class="btn" data-go="onboarding">Mulai</button>
     <p class="mini">Sudah punya akun? <span class="lnk" data-go="login">Masuk</span></p></div></section>`}
-function scrOnboarding(){return `<section class="screen">
-  <div class="ob-carousel" id="obCar">
-    <div class="ob-slide"><div class="ob-head"><h2>Temukan<br>Barber Terbaik</h2><p>Jelajahi profil barber yang benar-benar terdaftar di BarberGo, lihat hasil karya, dan ikuti akun yang kamu sukai.</p></div>
-      <div class="ob-card"><div class="ob-empty">${I('compass','ic ic34')}<b>Profil barber asli</b><span>Konten di Jelajahi dan Beranda berasal dari pengguna yang benar-benar terdaftar.</span></div></div></div>
-    <div class="ob-slide"><div class="ob-head"><h2>Bagikan &amp;<br>Dapatkan Apresiasi</h2><p>Unggah hasil karya kamu. Postingan, like, komentar, dan profil tersimpan dari akun nyata.</p></div>
-      <div class="ob-card"><div class="ob-empty">${I('image','ic ic34')}<b>Konten kamu sendiri</b><span>Tidak ada akun, postingan, komentar, atau statistik palsu di aplikasi.</span></div></div></div>
-  </div>
-  <div class="dots" id="obDots"><i class="on"></i><i></i></div>
-  <button class="btn ob-btn" data-next>Lanjut</button>
-  <button class="btn-o ob-skip" data-go="login">Lewati</button></section>`}
+let ONBOARD_PROFILES=[];let onboardingLoading=false;
+async function loadOnboardingProfiles(){
+  if(onboardingLoading||!window.BGF)return; onboardingLoading=true;
+  try{
+    const snap=await BGF.getDocs(BGF.collection(BGF.db,'profiles'));
+    const arr=snap.docs.map(d=>({uid:d.id,...d.data()})).filter(x=>x.uid&&x.username);
+    for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
+    ONBOARD_PROFILES=arr.slice(0,3);
+    if(location.hash==='#/onboarding')render();
+  }catch(e){console.warn('[BarberGo] onboarding profiles unavailable',e)}finally{onboardingLoading=false}
+}
+function onboardingUserCard(u){return `<div class="ob-card"><div class="ob-top">${av(u.uid,44)}<div class="ob-user"><b>${esc(u.username||u.uid)}</b><span>${esc(u.cat||'Barber')}</span></div><button class="follow-chip" data-follow="${esc(u.uid)}">${followLabel(u.uid)}</button>${I('send','ic ic18 dim')}</div><div class="ob-stats"><div class="stat"><b>${fmt(u.stats?.[0]||0)}</b><span>Post</span></div><div class="stat"><b>${fmt((FOLLOW_META[u.uid]?.followers||u.followers||[]).length)}</b><span>Followers</span></div><div class="stat"><b>${fmt((FOLLOW_META[u.uid]?.following||u.follows||[]).length)}</b><span>Following</span></div></div><div class="ob-grid">${(state.posts||[]).filter(p=>p.u===u.uid||p.ownerUid===u.uid).slice(0,6).map(p=>`<div class="ph"><img src="${p.vid?videoThumb(p.vid,p.img):SQR(p.img)}" loading="lazy" alt="" onerror="this.remove()"></div>`).join('')||'<div class="ob-empty" style="grid-column:1/-1"><b>Belum ada postingan</b><span>Profil ini belum mengunggah karya.</span></div>'}</div></div>`}
+function scrOnboarding(){const u=ONBOARD_PROFILES[0];return `<section class="screen"><div class="ob-carousel" id="obCar"><div class="ob-slide"><div class="ob-head"><h2>Temukan<br>Barber Terbaik</h2><p>Jelajahi profil barber nyata yang terdaftar di BarberGo.</p></div>${u?onboardingUserCard(u):'<div class="ob-card"><div class="ob-empty"><b>Mencari profil BarberGo...</b><span>Data diambil langsung dari Firestore.</span></div></div>'}</div><div class="ob-slide"><div class="ob-head"><h2>Bagikan &amp;<br>Dapatkan Apresiasi</h2><p>Unggah hasil karya, dapatkan like dan komentar dari pengguna nyata.</p></div>${ONBOARD_PROFILES[1]?onboardingUserCard(ONBOARD_PROFILES[1]):'<div class="ob-card"><div class="ob-empty"><b>Konten nyata</b><span>Tidak ada akun atau statistik dummy.</span></div></div>'}</div></div><div class="dots" id="obDots"><i class="on"></i><i></i></div><button class="btn" data-next>Lanjut</button><button class="btn-o ob-skip" data-go="login">Lewati</button></section>`}
 function scrLogin(){return `<section class="screen"><div class="scrollcol">
   <div class="login-head"><div class="logo-b lb-lg">B</div><div class="brand sm">BARBERGO</div></div>
   <div class="login-title"><h2>Selamat datang kembali</h2><p>Masuk untuk melanjutkan</p></div>
@@ -2357,7 +2396,7 @@ function render(){
   resortReels();
   view.innerHTML=fn();
   view.scrollTop=0;
-  if(r==='post'){const p=findPost(pid());if(p){renderCmts(p);if(p.vid)setupPostVideo();else setupPostMusic()}}
+  if(r==='post'){const p=findPost(pid());if(p){renderCmts(p);syncPostComments(p);if(p.vid)setupPostVideo();else setupPostMusic()}}
   const key=NAVKEY[r]??null;
   navslot.innerHTML=(authed&&!HIDENAV.includes(r))?navHTML(key):'';
   sidebar.innerHTML=authed?sbHTML(key):'';
@@ -2427,6 +2466,9 @@ function applyFilter(scope){
     const okC=cat==='all'||!el.dataset.cat||el.dataset.cat===cat;
     el.style.display=okQ&&okC?'':'none';});
 }
+const PUBLIC_DOMAIN='https://note.barbergo.world';
+const profileUrl=u=>PUBLIC_DOMAIN+'/profile/'+encodeURIComponent((u==='me'||u===FBuid)?(state.me.username||FBuid||'user'):u);
+const postUrl=id=>PUBLIC_DOMAIN+'/post/'+encodeURIComponent(id);
 function shareSheet(titleTxt,url,title){
   const rows=['WhatsApp','Instagram','X / Twitter','Telegram'].map(a=>`<button class="sh-row" data-shareapp="${a}">${I('send','ic ic18')} Bagikan ke ${a}</button>`).join('');
   const avs=THREADS().slice(0,5).map(u=>`<button class="s-to" data-sendo="${u}" data-url="${esc(url)}" data-title="${esc(title||titleTxt)}">${av(u,48)}<span>${uname(u)}</span></button>`).join('');
@@ -2454,7 +2496,7 @@ function postOpts(id){
     <button class="sh-row" data-report="${id}">${I('help','ic ic18')} Laporkan</button>
     ${mine?`<button class="sh-row" style="color:#ff6b6b" data-delpost="${id}">${I('trash','ic ic18')} Hapus Postingan</button>`:''}
     <button class="sh-row" data-close style="border:0">Batal</button>`);
-  $('#optCopy').onclick=()=>{try{navigator.clipboard&&navigator.clipboard.writeText('https://barbergo.app/p/'+id)}catch(e){};snd('share');toast('Tautan disalin');closeSheet()};
+  $('#optCopy').onclick=()=>{try{navigator.clipboard&&navigator.clipboard.writeText(postUrl(id))}catch(e){};snd('share');toast('Tautan disalin');closeSheet()};
 }
 function qrSVG(seed){
   let h=seed%99991;const rnd=()=>{h=(h*9301+49297)%233280;return h/233280};
@@ -2869,7 +2911,7 @@ document.addEventListener('click',e=>{
     save();
     ;(async()=>{try{await setFollowRemote(u,on);snd(on?'follow':'unfollow');vibrate(15);toast(on?'Kamu mengikuti '+uname(u):'Berhenti mengikuti '+uname(u));await loadFollowMeta(u)}catch(err){if(on)delete state.follows[u];else state.follows[u]=1;save();snd('cancel');toast('Follow gagal: '+fbErr(err))}
       $$(`[data-follow="${u}"]`).forEach(b=>{b.classList.toggle('on',on);b.textContent=followLabel(u)});
-      if(location.hash==='#/following')refresh();
+      
     })();
     return;
   }
@@ -2916,11 +2958,11 @@ document.addEventListener('click',e=>{
   const sh=t.closest('[data-share]');
   if(sh){
     const k=sh.dataset.share,id=sh.dataset.id;
-    if(k==='profile')shareSheet('Profil @'+state.me.username,'https://barbergo.app/profile','Profil @'+state.me.username);
-    else if(k==='barber')shareSheet('Profil @'+id,'https://barbergo.app/barber/'+id,'Profil @'+id);
-    else if(k==='cpost'){const c=state.cposts.find(x=>x.id===id);shareSheet(c?c.title:'Komunitas','https://barbergo.app/c/'+id,c?c.title:'Komunitas')}
-    else if(k==='reel'){const r2=REELS.find(x=>x.id===id);shareSheet('Reels @'+(r2?uname(r2.u):''),'https://barbergo.app/r/'+id,'Reels @'+(r2?uname(r2.u):''))}
-    else{const p=findPost(id);shareSheet('Postingan @'+(p?uname(p.u):''),'https://barbergo.app/p/'+id,'Postingan @'+(p?uname(p.u):''))}
+    if(k==='profile')shareSheet('Profil @'+state.me.username,profileUrl('me'),'Profil @'+state.me.username);
+    else if(k==='barber')shareSheet('Profil @'+id,profileUrl(id),'Profil @'+id);
+    else if(k==='cpost'){const c=state.cposts.find(x=>x.id===id);shareSheet(c?c.title:'Komunitas',PUBLIC_DOMAIN+'/community/'+encodeURIComponent(id),c?c.title:'Komunitas')}
+    else if(k==='reel'){const r2=REELS.find(x=>x.id===id);shareSheet('Reels @'+(r2?uname(r2.u):''),PUBLIC_DOMAIN+'/reels/'+encodeURIComponent(id),'Reels @'+(r2?uname(r2.u):''))}
+    else{const p=findPost(id);shareSheet('Postingan @'+(p?uname(p.u):''),postUrl(id),'Postingan @'+(p?uname(p.u):''))}
     return;
   }
   const sa=t.closest('[data-shareapp]');
@@ -3055,7 +3097,7 @@ document.addEventListener('click',e=>{
       <button class="sh-row" data-toast="Kami akan menampilkan lebih sedikit reels seperti ini">Tidak Tertarik</button>
       <button class="sh-row" data-report="${id}">${I('help','ic ic18')} Laporkan</button>
       <button class="sh-row" data-close style="border:0">Batal</button>`);
-    $('#rlCopy').onclick=()=>{try{navigator.clipboard&&navigator.clipboard.writeText('https://barbergo.app/r/'+id)}catch(e){};snd('share');toast('Tautan disalin');closeSheet()};
+    $('#rlCopy').onclick=()=>{try{navigator.clipboard&&navigator.clipboard.writeText(PUBLIC_DOMAIN+'/reels/'+encodeURIComponent(id))}catch(e){};snd('share');toast('Tautan disalin');closeSheet()};
     return;
   }
   const rc=t.closest('[data-reelcmt]');
@@ -3162,19 +3204,23 @@ function renderCmts(p){
   list.innerHTML=p.comments.length?p.comments.map((c,i)=>cmtHTML(c,i)).join(''):'<div class="see-more">Belum ada komentar. Jadilah yang pertama</div>';
   const cc2=$('#cmCount');if(cc2)cc2.textContent=(p.cm||0)+countC(p.comments);
 }
-function addComment(){
+async function addComment(){
   const inp=$('#cmIn'),v=inp.value.trim();
   if(!v){snd('cancel');toast('Tulis komentar dulu');return}
   if(v.length>2200){snd('cancel');toast('Komentar maksimal 2.200 karakter');return}
-  const p=findPost(pid());if(!p)return;
-  const now={u:'me',t:v,likes:0,liked:false,time:'baru saja',replies:[]};
-  if(replyTo){
-    const [i,j]=replyTo.split(':');const c=p.comments[+i];
-    if(j!=null&&c.replies[+j])c.replies.push({u:'me',t:'@'+uname(c.replies[+j].u)+' '+v,likes:0,liked:false,time:'baru saja',replies:[]});
-    else c.replies.push(now);
-    replyTo=null;$('#replyChip').hidden=true;$('#cmIn').placeholder='Tambahkan komentar...';
-  }else p.comments.push(now);
-  save();inp.value='';snd('chatsend');renderCmts(p);toast('Komentar terkirim');
+  const p=findPost(pid());if(!p||!FBuid){toast('Postingan atau akun tidak valid');return}
+  const now={u:'me',t:v,likes:0,liked:false,time:postDateTime(Date.now()),replies:[]};
+  try{
+    if(replyTo){
+      const [i,j]=replyTo.split(':');if(!p.comments?.[+i]?._cloudId)await syncPostComments(p);const c=p.comments[+i];if(!c||!c._cloudId){toast('Komentar tujuan belum tersinkron');return}
+      const r={u:'me',t:j!=null&&c.replies?.[+j]?('@'+uname(c.replies[+j].u)+' '+v):v,likes:0,liked:false,time:postDateTime(Date.now()),replies:[]};
+      await saveReplyRemote(p.id,c._cloudId,r);c.replies=c.replies||[];c.replies.push(r);
+      replyTo=null;$('#replyChip').hidden=true;$('#cmIn').placeholder='Tambahkan komentar...';
+    }else{
+      await saveCommentRemote(p.id,now);p.comments=p.comments||[];p.comments.push(now);p.cm=p.comments.length;
+    }
+    inp.value='';snd('chatsend');renderCmts(p);toast('Komentar terkirim');
+  }catch(e){snd('cancel');toast('Komentar gagal disimpan: '+fbErr(e))}
 }
 async function sendChat(){
   const inp=$('#chIn'),v=inp.value.trim();
