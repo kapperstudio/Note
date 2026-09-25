@@ -639,7 +639,7 @@ button.statb{cursor:pointer}
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,signInWithRedirect,getRedirectResult,GoogleAuthProvider,OAuthProvider,signOut,updateProfile,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import{getFirestore,doc,getDoc,setDoc,deleteDoc,collection,getDocs,onSnapshot,query,where}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import{getFirestore,doc,getDoc,setDoc,deleteDoc,collection,getDocs,onSnapshot,query,where,orderBy,limit}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig={apiKey:"AIzaSyDb9KnG1MNGnS62UuZGZ6MIdGcIXmcwoVA",authDomain:"kapperstudio-c629c.firebaseapp.com",projectId:"kapperstudio-c629c",storageBucket:"kapperstudio-c629c.firebasestorage.app",messagingSenderId:"689372483921",appId:"1:689372483921:web:de297c0dd520b8a0f2c370",measurementId:"G-BWBJCSQQEF"};
 
@@ -651,7 +651,7 @@ const googleProvider=new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:'select_account'});
 
 window.BGF={
-  auth,db,doc,getDoc,setDoc,deleteDoc,collection,getDocs,onSnapshot,query,where,
+  auth,db,doc,getDoc,setDoc,deleteDoc,collection,getDocs,onSnapshot,query,where,orderBy,limit,
   emailLogin:(e,p)=>signInWithEmailAndPassword(auth,e,p),
   emailRegister:(e,p)=>createUserWithEmailAndPassword(auth,e,p),
   google:()=>signInWithPopup(auth,googleProvider).catch(async e=>{
@@ -883,7 +883,7 @@ if(state){
 let FBuid=null,FBemail=null,syncT=null;
 let syncBusy=false,syncPending=false,syncRetry=0,syncRetryT=null,syncGeneration=0;
 let postsUnsub=null,cloudPostsReady=false;
-let profilesUnsub=null,followingUnsub=null,followersUnsub=null,chatUnsub=null,chatThreadsUnsub=null;
+let profilesUnsub=null,followingUnsub=null,followersUnsub=null,chatUnsub=null,chatThreadsUnsub=null,storiesUnsub=null;
 const PUBLIC_PROFILES={};
 const FOLLOW_META={};
 
@@ -1010,6 +1010,53 @@ function startPostsListener(){
   }catch(e){fbErrorInfo(e,'startPostsListener/posts')}
 }
 function stopPostsListener(){if(postsUnsub){try{postsUnsub()}catch(e){}postsUnsub=null}cloudPostsReady=false;}
+function normalizeCloudStory(x){
+  const s={...x};
+  s.u=s.ownerUid===FBuid?'me':(s.ownerUid||s.u||'');
+  s.slides=Array.isArray(s.slides)?s.slides.filter(Boolean):[];
+  s.created=Number(s.created||0);
+  s.expires=Number(s.expires||s.created+24*HOUR);
+  s.author=s.author||{};
+  return s;
+}
+function mergeCloudStories(arr){
+  const now=Date.now(),map=new Map();
+  (arr||[]).map(normalizeCloudStory).filter(s=>s.slides.length&&s.created&&s.expires>now).forEach(s=>map.set(s.id||(`${s.u}_${s.created}`),s));
+  state.stories=[...map.values()].sort((a,b)=>b.created-a.created);
+}
+async function publishStoryCloud(story){
+  if(!window.BGF||!FBuid||!story)return false;
+  try{
+    const id=story.id||('s'+Date.now()+Math.random().toString(36).slice(2,7));
+    story.id=id;story.ownerUid=FBuid;story.u=FBuid;story.expires=story.expires||story.created+24*HOUR;
+    story.author=authorSnapshot();
+    await BGF.setDoc(BGF.doc(BGF.db,'stories',id),{...story},{merge:true});
+    return true;
+  }catch(e){fbErrorInfo(e,'setDoc/stories/'+(story.id||''));return false}
+}
+function startStoriesListener(){
+  if(!window.BGF||!FBuid)return;
+  if(storiesUnsub){try{storiesUnsub()}catch(e){}storiesUnsub=null}
+  const now=Date.now();
+  try{
+    storiesUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'stories'),BGF.where('expires','>',now)),snap=>{
+      mergeCloudStories(snap.docs.map(d=>({id:d.id,...d.data()})));
+      saveLocalOnly();
+      if(location.hash==='#/home'){
+        const row=$('.story-row');if(row){row.innerHTML=storyTiles()}
+      }
+    },e=>fbErrorInfo(e,'onSnapshot/stories'));
+  }catch(e){fbErrorInfo(e,'startStoriesListener/stories')}
+}
+function stopStoriesListener(){if(storiesUnsub){try{storiesUnsub()}catch(e){}storiesUnsub=null}}
+async function loadGlobalStories(){
+  if(!window.BGF||!FBuid)return;
+  try{
+    const snap=await BGF.getDocs(BGF.query(BGF.collection(BGF.db,'stories'),BGF.where('expires','>',Date.now())));
+    mergeCloudStories(snap.docs.map(d=>({id:d.id,...d.data()})));
+  }catch(e){fbErrorInfo(e,'getDocs/stories')}
+}
+
 async function loadGlobalPosts(){
   if(!window.BGF||!FBuid)return;
   try{
@@ -1225,6 +1272,8 @@ async function loadCloudProfile(user){
       state.posts=[...(d.posts||[])].map(normalizeCloudPost);
       await loadGlobalPosts();
       startPostsListener();
+      await loadGlobalStories();
+      startStoriesListener();
       startProfilesListener();
       startFollowListeners();
       startChatThreadsListener();
@@ -1243,6 +1292,8 @@ async function loadCloudProfile(user){
       state.me.name=user.displayName||state.me.name||'';
       state.posts=(state.posts||[]).map(normalizeCloudPost);
       startPostsListener();
+      await loadGlobalStories();
+      startStoriesListener();
       startProfilesListener();
       startFollowListeners();
       startChatThreadsListener();
@@ -1274,6 +1325,7 @@ function initCloudAuth(){
       syncGeneration++;
       clearTimeout(syncT);
       clearTimeout(syncRetryT);
+      stopStoriesListener();
       stopProfilesListener();
       stopFollowListeners();
       stopChatListener();
@@ -1373,20 +1425,58 @@ function distU(u){
   return ((hashS(loc+u)%140)/10+0.6).toFixed(1);
 }
 function rankedFeed(mode){
-  const now=Date.now();
-  let arr=state.posts.map(p=>{
-    const ageH=Math.max(0,(now-(p.created||now-HOUR))/HOUR);
-    const eng=(p.likes||0)+((p.cm||0)+countC(p.comments))*3;
-    const rec=Math.max(0,60-ageH*3);
-    const fol=p.u==='me'||state.follows[p.u]?35:0;
-    const jit=hashS(p.id+state.seed)%12;
-    return{p,s:eng+rec+fol+jit};
+  const now=Date.now(), me=FBuid||'me';
+  const followed=new Set(Object.keys(state.follows||{}).filter(k=>state.follows[k]));
+  const seen=new Set(Object.keys(state.likes||{}));
+  const interests=new Set();
+  (state.posts||[]).filter(p=>p.u==='me'||followed.has(p.u)).forEach(p=>{
+    String(p.tags||'').toLowerCase().split(/\s+/).filter(Boolean).forEach(t=>interests.add(t));
   });
-  if(mode==='m')arr=arr.filter(x=>x.p.u==='me'||state.follows[x.p.u]);
-  if(mode==='t'&&state.gps)arr.sort((a,b)=>distU(a.p.u)-distU(b.p.u));
+  let arr=(state.posts||[]).filter(p=>p&&p.id&&p.created);
+  arr=arr.map(p=>{
+    const ageH=Math.max(.05,(now-(p.created||now))/HOUR);
+    const fresh=Math.max(0,42-ageH*2.1);
+    const engagement=Math.log1p(Math.max(0,p.likes||0))*5 + Math.log1p((p.cm||0)+countC(p.comments))*3;
+    const followScore=(p.u==='me'||followed.has(p.u))?32:0;
+    const tagScore=String(p.tags||'').toLowerCase().split(/\s+/).reduce((n,t)=>n+(interests.has(t)?4:0),0);
+    const mediaScore=p.vid?2:1;
+    const repeatPenalty=seen.has(p.id)?-2:0;
+    const deterministic=(hashS(p.id+String(state.seed||1))%17)/10;
+    return {p,s:fresh+engagement+followScore+tagScore+mediaScore+repeatPenalty+deterministic};
+  });
+  if(mode==='m') arr=arr.filter(x=>x.p.u==='me'||followed.has(x.p.u));
+  if(mode==='t'&&state.gps) arr.sort((a,b)=>distU(a.p.u)-distU(b.p.u));
   else arr.sort((a,b)=>b.s-a.s);
-  return arr.map(x=>x.p);
+  // Diversifikasi ala feed sosial: jangan menumpuk banyak post dari author yang sama.
+  const out=[],rest=[...arr],counts=new Map();
+  while(rest.length){
+    let pick=rest.findIndex(x=>(counts.get(x.p.u)||0)<2);
+    if(pick<0)pick=0;
+    const x=rest.splice(pick,1)[0];out.push(x.p);counts.set(x.p.u,(counts.get(x.p.u)||0)+1);
+  }
+  return out;
 }
+function rankedExplore(){
+  const now=Date.now(), followed=new Set(Object.keys(state.follows||{}).filter(k=>state.follows[k]));
+  const tags=new Set();
+  (state.posts||[]).filter(p=>followed.has(p.u)).forEach(p=>String(p.tags||'').toLowerCase().split(/\s+/).filter(Boolean).forEach(t=>tags.add(t)));
+  const scored=(state.posts||[]).filter(p=>p&&p.id).map(p=>{
+    const ageH=Math.max(.05,(now-(p.created||now))/HOUR);
+    const fresh=Math.max(0,28-ageH*1.2);
+    const eng=Math.log1p(p.likes||0)*7+Math.log1p((p.cm||0)+countC(p.comments))*5;
+    const affinity=String(p.tags||'').toLowerCase().split(/\s+/).reduce((n,t)=>n+(tags.has(t)?5:0),0);
+    const followPenalty=followed.has(p.u)?-1:4;
+    const diversity=(hashS(p.id+'explore')%23)/10;
+    return {p,s:fresh+eng+affinity+followPenalty+diversity};
+  }).sort((a,b)=>b.s-a.s);
+  const out=[],counts=new Map(),rest=[...scored];
+  while(rest.length){
+    let pick=rest.findIndex(x=>(counts.get(x.p.u)||0)<3);if(pick<0)pick=0;
+    const x=rest.splice(pick,1)[0];out.push(x.p);counts.set(x.p.u,(counts.get(x.p.u)||0)+1);
+  }
+  return out;
+}
+
 function rankReels(){
   return (state.posts||[]).filter(p=>p.vid).map(p=>({id:p.id,u:p.u,img:p.img,cap:p.cap,likes:p.likes||0,cm:p.cm||0,vid:p.vid}));
 }
@@ -1664,7 +1754,16 @@ function scrSetup(){
 }
 function storyTiles(){
   let html=`<button class="story" data-go="createstory"><span class="ring add"><span class="avatar sz58 av-plus">${I('plus','ic ic22')}</span></span><span>Buat</span></button>`;
-  if(state.stories.length)html+=`<button class="story" data-story="me"><span class="ring${state.seen['me']?' seen':''}">${av('me',58)}</span><span>Story kamu</span></button>`;
+  const groups=new Map();
+  (state.stories||[]).filter(s=>s.expires>Date.now()).forEach(s=>{
+    const u=s.u==='me'||s.ownerUid===FBuid?'me':(s.ownerUid||s.u); if(!u)return;
+    if(!groups.has(u))groups.set(u,[]);groups.get(u).push(s);
+  });
+  const users=[...groups.entries()].sort((a,b)=>Math.max(...b[1].map(x=>x.created||0))-Math.max(...a[1].map(x=>x.created||0)));
+  users.forEach(([u,ss])=>{
+    const label=u==='me'?'Story kamu':('@'+uname(u));
+    html+=`<button class="story" data-story="${esc(u)}"><span class="ring${state.seen[u]?' seen':''}">${av(u,58)}</span><span>${esc(label)}</span></button>`;
+  });
   return html;
 }
 let feedBatch=4;
@@ -1692,16 +1791,19 @@ function scrHome(){
   <div class="feed">${feedHTML()}</div></section>`;
 }
 function scrExplore(){
+  const posts=rankedExplore();
+  const users=Object.entries(USERS).filter(([k,u])=>k!=='me'&&u&&u.username).sort((a,b)=>{
+    const af=(FOLLOW_META[a[0]]?.followers||[]).length, bf=(FOLLOW_META[b[0]]?.followers||[]).length;
+    return bf-af;
+  }).slice(0,8);
   return `<section class="screen">
   <div class="page-title-row"><div class="page-title">Jelajah</div><span style="font-size:12px;color:var(--muted)" data-go="maps">${I('map','ic ic14')} Peta</span></div>
   <label class="search">${I('search','ic ic18')}<input id="expSearch" placeholder="Cari barber, tag, produk..." autocomplete="off"><div class="ac" id="searchAC" hidden></div></label>
   <div class="chip-row">${ALLTAGS().slice(0,12).map(t=>`<button class="chip" data-go="hashtag/${t}">#${t}</button>`).join('')}</div>
   <div class="sec"><b>Barber Populer</b><span data-go="maps">Lihat peta</span></div>
-  <div class="b-cards">${Object.entries(USERS).filter(([k,u])=>u.stats&&k==='me').map(([k,u])=>`<div class="b-card"><span class="avatar sz56"><img src="${SQR(u.av)}" loading="lazy" alt="" onerror="this.remove()"></span><b data-go="barber/${k}">${u.username}${vb(k)}</b><span>${esc(u.cat)}</span><button class="mini-follow${state.follows[k]?' on':''}" data-follow="${k}">${state.follows[k]?'Mengikuti':'Follow'}</button></div>`).join('')}</div>
-  <div class="sec"><b>Trending Reels</b><span data-go="reels">Lihat semua</span></div>
-  <div class="t-cards">${REELS.slice(0,6).map(r=>`<div class="t-card" data-go="reels"><span class="ph fill"><img src="${esc(videoThumb(r.vid,r.img))}" loading="lazy" alt="" onerror="this.remove()"></span><div class="t-info">${esc(r.cap.slice(0,26))}...<div class="t-views">${I('play','ic ic12')}${fmt(r.likes+r.cm*3)} tayangan</div></div></div>`).join('')}</div>
-  <div class="sec"><b>Postingan Untukmu</b><span></span></div>
-  <div class="grid3" style="padding-bottom:20px">${state.posts.map(p=>`<div class="ph${p.vid?' rl':''}" data-go="post/${p.id}"><img src="${SQR(p.img)}" loading="lazy" alt="" onerror="this.remove()">${p.vid?'<span class="pl">'+I('play','ic ic12')+'Reel</span>':''}</div>`).join('')}</div></section>`;
+  <div class="b-cards">${users.map(([k,u])=>`<div class="b-card"><span class="avatar sz56"><img src="${SQR(u.av||k)}" loading="lazy" alt="" onerror="this.remove()"></span><b data-go="barber/${k}">${esc(u.username)}${vb(k)}</b><span>${esc(u.cat||'Barber')}</span>${k!==FBuid?followButton(k,true):''}</div>`).join('')||'<div class="empty">Belum ada profil publik.</div>'}</div>
+  <div class="sec"><b>Postingan Untukmu</b><span>${posts.length} konten</span></div>
+  <div class="grid3" style="padding-bottom:20px">${posts.slice(0,30).map(p=>`<div class="ph${p.vid?' rl':''}" data-go="post/${p.id}"><img src="${SQR(p.img)}" loading="lazy" alt="" onerror="this.remove()">${p.vid?'<span class="pl">'+I('play','ic ic12')+'Reel</span>':''}</div>`).join('')||'<div class="empty" style="grid-column:1/-1">Belum ada postingan publik.</div>'}</div></section>`;
 }
 function scrMaps(){
   return `<section class="screen fixed">
@@ -2452,9 +2554,11 @@ function openViewer(slides,u,label){
   show(0);
 }
 function openStory(u){
-  if(u==='me'){const sl=state.stories.flatMap(s=>s.slides);if(!sl.length){snd('cancel');toast('Belum ada story aktif');return}return openViewer(sl,'me','Story kamu')}
-  const s=STORIES_BASE.find(x=>x.u===u);
-  if(s)openViewer(s.slides,u,s.time);
+  const key=(u==='me'||u===FBuid)?'me':u;
+  const stories=(state.stories||[]).filter(s=>s.u===key||s.ownerUid===u).sort((a,b)=>b.created-a.created);
+  const slides=stories.flatMap(s=>s.slides||[]);
+  if(!slides.length){snd('cancel');toast('Belum ada story aktif');return}
+  state.seen[key]=1;saveLocalOnly();openViewer(slides,key,key==='me'?'Story kamu':('Story @'+uname(u)));
 }
 function updateCartBadge(){const b=$('#cartN');if(!b)return;b.textContent=state.cart.length;b.hidden=!state.cart.length}
 function applyFilter(scope){
@@ -2847,6 +2951,7 @@ document.addEventListener('click',e=>{
     confirmSheet('Keluar dari akun ini?',async()=>{
       try{if(window.BGF)await BGF.logout()}catch(e){}
       stopPostsListener();
+      stopStoriesListener();
       stopProfilesListener();
       stopFollowListeners();
       stopChatListener();
@@ -3244,12 +3349,15 @@ function publish(){
   createImg=null;createVid=null;postLoc=null;state.music=null;snd('upload');vibrate(20);
   go('home');toast('Postingan berhasil dibagikan');
 }
-function publishStory(btn){
+async function publishStory(btn){
   if(!stImg){snd('cancel');toast('Pilih foto dulu');return}
-  withLoad(btn,1000,()=>{
-    state.stories.unshift({u:'me',slides:[stImg],cap:$('#stCap')?$('#stCap').value.trim():'',created:Date.now()});
-    stImg=null;save();snd('upload');go('home');toast('Story dibagikan - aktif 24 jam');
-  });
+  if(!FBuid){toast('Akun belum terhubung ke Firestore');return}
+  const story={id:'s'+Date.now()+Math.random().toString(36).slice(2,7),u:'me',ownerUid:FBuid,slides:[stImg],cap:$('#stCap')?$('#stCap').value.trim():'',created:Date.now(),expires:Date.now()+24*HOUR,author:authorSnapshot()};
+  if(story.cap.length>500){toast('Caption story maksimal 500 karakter');return}
+  try{
+    await publishStoryCloud(story);
+    state.stories.unshift(story);saveLocalOnly();stImg=null;snd('upload');go('home');toast('Story dibagikan - tersimpan di Firestore');
+  }catch(e){snd('cancel');toast('Story gagal disimpan: '+fbErr(e))}
 }
 async function saveProfile(){
   const m=state.me;
