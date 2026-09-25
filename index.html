@@ -817,14 +817,14 @@ function linkifyMsg(s){
 }
 
 /* ===== LENCANA =====
-   🟡 KUNING #i-vgold : konten kreator / artis → set field `creator:true` di Firestore users/{uid}
-   🔴 MERAH #i-vpro   : akun profesional → aktifkan "Akun Profesional" di app, atau daftar di PROVER */
-const CREATORS=new Set();
+   🟡 KUNING #i-vgold : verified resmi dari Admin Panel → profiles/{uid}.verifiedPro
+   🔴 MERAH #i-vpro  : akun profesional → status profesional/pro di profil pengguna */
 const PROVER=new Set();
-const isCreator=u=>u==='me'?!!state.me.creator:CREATORS.has(u);
-const isProVer=u=>u==='me'?!!state.pro.on:PROVER.has(u);
-const isVer=u=>isCreator(u)||isProVer(u);
-const vb=u=>isCreator(u)?`<span class="vb" title="Konten Kreator"><svg class="ic"><use href="#i-vgold"/></svg></span>`
+const ADMINVERIFIED=new Set();
+const isProVer=u=>u==='me'?!!(state.pro&&state.pro.on):PROVER.has(u);
+const isAdminVerified=u=>u==='me'?!!state.me.verifiedPro:ADMINVERIFIED.has(u);
+const isVer=u=>isAdminVerified(u)||isProVer(u);
+const vb=u=>isAdminVerified(u)?`<span class="vb" title="Verified BarberGo"><svg class="ic"><use href="#i-vgold"/></svg></span>`
   :isProVer(u)?`<span class="vb" title="Akun Profesional"><svg class="ic"><use href="#i-vpro"/></svg></span>`:'';
 
 /* ============ DATA ============ */
@@ -977,7 +977,7 @@ function authorSnapshot(){
     bio:state.me.bio||'',
     creator:!!state.me.creator,
     pro:!!(state.pro&&state.pro.on),
-    verifiedPro:!!(state.pro&&state.pro.on),
+    verifiedPro:!!state.me.verifiedPro,
     link:state.me.link||'',
     bookLink:state.me.bookLink||'',
     highlights:Array.isArray(state.highlights)?JSON.parse(JSON.stringify(state.highlights)):[]
@@ -1092,7 +1092,7 @@ async function loadGlobalPosts(){
 
 function followDocId(follower,followee){return String(follower||'')+'_'+String(followee||'')}
 function chatDocId(a,b){return [String(a||''),String(b||'')].sort().join('_')}
-function publicProfileSnapshot(){const ps=state.businessLocation||((state.mapLocations||[]).find(x=>x.kind==='business'))||{};return {uid:FBuid,username:state.me.username||'',name:state.me.name||'',av:state.me.av||'',bio:state.me.bio||'',cat:state.me.cat||'',link:state.me.link||'',bookLink:state.me.bookLink||'',creator:!!state.me.creator,pro:!!(state.pro&&state.pro.on),verifiedPro:!!(state.pro&&state.pro.on),highlights:Array.isArray(state.highlights)?JSON.parse(JSON.stringify(state.highlights)):[],loc:ps.loc||'',lat:+(ps.lat||0),lng:+(ps.lng||0),updated:Date.now()}}
+function publicProfileSnapshot(){const ps=state.businessLocation||((state.mapLocations||[]).find(x=>x.kind==='business'))||{};return {uid:FBuid,username:state.me.username||'',name:state.me.name||'',av:state.me.av||'',bio:state.me.bio||'',cat:state.me.cat||'',link:state.me.link||'',bookLink:state.me.bookLink||'',creator:!!state.me.creator,pro:!!(state.pro&&state.pro.on),highlights:Array.isArray(state.highlights)?JSON.parse(JSON.stringify(state.highlights)):[],loc:ps.loc||'',lat:+(ps.lat||0),lng:+(ps.lng||0),updated:Date.now()}}
 async function publishPublicProfile(){
   if(!window.BGF||!FBuid)return false;
   try{await BGF.setDoc(BGF.doc(BGF.db,'profiles',FBuid),publicProfileSnapshot(),{merge:true});return true}
@@ -1100,10 +1100,18 @@ async function publishPublicProfile(){
 }
 function applyPublicProfiles(arr){
   (arr||[]).forEach(x=>{if(!x.uid)return;PUBLIC_PROFILES[x.uid]=x;
-    if(x.creator)CREATORS.add(x.uid);else CREATORS.delete(x.uid);
-    if(x.verifiedPro||x.pro)PROVER.add(x.uid);else PROVER.delete(x.uid);
-    USERS[x.uid]={...(USERS[x.uid]||{}),username:x.username||x.uid,name:x.name||x.username||x.uid,av:x.av||'',bio:x.bio||'',cat:x.cat||'',link:x.link||'',bookLink:x.bookLink||'',creator:!!x.creator,pro:!!(x.pro||x.verifiedPro),verifiedPro:!!(x.verifiedPro||x.pro),loc:x.loc||'',lat:+(x.lat||0),lng:+(x.lng||0),highlights:Array.isArray(x.highlights)?x.highlights:[],followers:FOLLOW_META[x.uid]?.followers||[],follows:FOLLOW_META[x.uid]?.following||[],stats:[(state.posts||[]).filter(p=>p.u===x.uid||p.ownerUid===x.uid).length,0,0]}
-  })
+    // `creator` bukan lagi tipe lencana verified. Jangan mengakses CREATORS yang sudah dihapus.
+    if(x.verifiedPro)ADMINVERIFIED.add(x.uid);else ADMINVERIFIED.delete(x.uid);
+    if(x.pro)PROVER.add(x.uid);else PROVER.delete(x.uid);
+    if(x.uid===FBuid){
+      state.me.verifiedPro=!!x.verifiedPro;
+      state.me.creator=!!x.creator;
+      state.pro={...(state.pro||{}),on:!!x.pro};
+    }
+    USERS[x.uid]={...(USERS[x.uid]||{}),username:x.username||x.uid,name:x.name||x.username||x.uid,av:x.av||'',bio:x.bio||'',cat:x.cat||'',link:x.link||'',bookLink:x.bookLink||'',creator:!!x.creator,pro:!!x.pro,verifiedPro:!!x.verifiedPro,loc:x.loc||'',lat:+(x.lat||0),lng:+(x.lng||0),highlights:Array.isArray(x.highlights)?x.highlights:[],followers:FOLLOW_META[x.uid]?.followers||[],follows:FOLLOW_META[x.uid]?.following||[],stats:[(state.posts||[]).filter(p=>p.u===x.uid||p.ownerUid===x.uid).length,0,0]}
+  });
+  saveLocalOnly();
+  if(location.hash==='#/profile'||location.hash.startsWith('#/barber/')||location.hash==='#/explore')render();
 }
 
 /* ============ FIRESTORE: GLOBAL MARKETPLACE / SERVICES / MAP / FAQ ============ */
@@ -1359,7 +1367,10 @@ async function notifyRemote(recipientUid,type,text,targetId='',extra={}){
 function startNotificationsListener(){
   if(!window.BGF||!FBuid)return; if(notificationsUnsub)notificationsUnsub();
   notificationsUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'notifications',FBuid,'items'),BGF.orderBy('created','desc'),BGF.limit(100)),snap=>{
-    state.notifs=snap.docs.map(d=>{const x=d.data()||{};return {id:d.id,...x,u:x.actorUid,k:x.type||'system',t:x.text||'',time:x.created?timeAgo(x.created):'Baru saja',go:x.targetId?('post/'+x.targetId):''}});
+    state.notifs=snap.docs.map(d=>{
+      const x=d.data()||{}; const actor=x.actor||{};
+      return {id:d.id,...x,u:x.actorUid||actor.uid||'',k:x.type||'system',t:x.text||x.body||x.title||'Notifikasi baru',title:x.title||'',body:x.body||x.text||'',detail:x.detail||x.body||x.text||'',actor,time:x.created?timeAgo(x.created):'Baru saja',date:x.created?fullDate(x.created):'Baru saja',go:x.targetId?('post/'+x.targetId):''};
+    });
     state.notificationUnread=state.notifs.filter(x=>!x.read).length; state.notifSeen=state.notificationUnread===0; saveLocalOnly();
     if(location.hash==='#/notif')render();
   },e=>fbErrorInfo(e,'onSnapshot/notifications/'+FBuid));
@@ -1460,7 +1471,7 @@ async function loadCloudProfile(user){
       state.me={...state.me,...(d.me||{})};
       if(d.gender)state.gender=d.gender;
       if(d.createdAt)state.createdAt=d.createdAt;
-      state.pro={on:!!((d.pro&&d.pro.on)||d.verifiedPro)};
+      state.pro={on:!!(d.pro&&d.pro.on)};
       state.me.creator=!!d.creator;
       CLOUD_KEYS.forEach(k=>{if(k==='pro'||k==='me')return;if(d[k]!==undefined)state[k]=d[k]});
       state.posts=[...(d.posts||[])].map(normalizeCloudPost);
@@ -1598,7 +1609,7 @@ function fbErr(e){
 
 function publicUser(u){
   if(u==='me' || u===FBuid){
-    return {username:state.me.username||'kamu',name:state.me.name||'',av:state.me.av||'',cat:state.me.cat||'',bio:state.me.bio||'',link:state.me.link||'',bookLink:state.me.bookLink||'',creator:!!state.me.creator,pro:!!(state.pro&&state.pro.on),verifiedPro:!!(state.pro&&state.pro.on),highlights:state.highlights||[],loc:(state.services[0]&&state.services[0].loc)||''};
+    return {username:state.me.username||'kamu',name:state.me.name||'',av:state.me.av||'',cat:state.me.cat||'',bio:state.me.bio||'',link:state.me.link||'',bookLink:state.me.bookLink||'',creator:!!state.me.creator,pro:!!(state.pro&&state.pro.on),verifiedPro:!!state.me.verifiedPro,highlights:state.highlights||[],loc:(state.services[0]&&state.services[0].loc)||''};
   }
   if(PUBLIC_PROFILES[u]){const x=PUBLIC_PROFILES[u];return USERS[u]={...(USERS[u]||{}),username:x.username||u,name:x.name||x.username||u,av:x.av||'',cat:x.cat||'',bio:x.bio||'',link:x.link||'',bookLink:x.bookLink||'',creator:!!x.creator,pro:!!x.pro,verifiedPro:!!x.verifiedPro,loc:x.loc||'',lat:+(x.lat||0),lng:+(x.lng||0),highlights:Array.isArray(x.highlights)?x.highlights:[],followers:FOLLOW_META[u]?.followers||[],follows:FOLLOW_META[u]?.following||[],stats:[(state.posts||[]).filter(x=>x.u===u||x.ownerUid===u).length,0,0]}}
   if(USERS[u])return USERS[u];
@@ -1928,7 +1939,7 @@ async function loadOnboardingProfiles(){
     if(location.hash==='#/onboarding')render();
   }catch(e){console.warn('[BarberGo] onboarding profiles unavailable',e)}finally{onboardingLoading=false}
 }
-function onboardingUserCard(u){const verified=(u.verifiedPro===true||u.pro===true||u.creator===true);const ps=(state.posts||[]).filter(p=>p.u===u.uid||p.ownerUid===u.uid).slice(0,6);return `<div class="ob-card"><div class="ob-top">${av(u.uid,44)}<div class="ob-user"><b>${esc(u.username||u.uid)}${verified?`<span class="vb" title="${u.creator?'Konten Kreator':'Akun Profesional'}"><svg class="ic"><use href="#i-${u.creator?'vgold':'vpro'}"></use></svg></span>`:''}</b><span>${esc(u.cat||'Barber')}</span></div><button class="follow-chip" data-follow="${esc(u.uid)}">${followLabel(u.uid)}</button>${I('send','ic ic18 dim')}</div><div class="ob-stats"><div class="stat"><b>${fmt(u.stats?.[0]||ps.length||0)}</b><span>Post</span></div><div class="stat"><b>${fmt((FOLLOW_META[u.uid]?.followers||u.followers||[]).length)}</b><span>Followers</span></div><div class="stat"><b>${fmt((FOLLOW_META[u.uid]?.following||u.follows||[]).length)}</b><span>Following</span></div></div><div class="ob-grid">${ps.map(p=>`<div class="ph" title="${esc(p.author?.username||u.username||'')}"><img src="${p.vid?videoThumb(p.vid,p.img):SQR(p.img)}" loading="lazy" alt="${esc(p.author?.name||u.name||u.username||'')}" onerror="this.remove()"></div>`).join('')||'<div class="ob-empty" style="grid-column:1/-1"><b>Belum ada postingan</b><span>Profil ini belum mengunggah karya.</span></div>'}</div></div>`}
+function onboardingUserCard(u){const verified=(u.verifiedPro===true||u.pro===true);const ps=(state.posts||[]).filter(p=>p.u===u.uid||p.ownerUid===u.uid).slice(0,6);return `<div class="ob-card"><div class="ob-top">${av(u.uid,44)}<div class="ob-user"><b>${esc(u.username||u.uid)}${verified?`<span class="vb" title="${u.verifiedPro?'Verified BarberGo':'Akun Profesional'}"><svg class="ic"><use href="#i-${u.verifiedPro?'vgold':'vpro'}"></use></svg></span>`:''}</b><span>${esc(u.cat||'Barber')}</span></div><button class="follow-chip" data-follow="${esc(u.uid)}">${followLabel(u.uid)}</button>${I('send','ic ic18 dim')}</div><div class="ob-stats"><div class="stat"><b>${fmt(u.stats?.[0]||ps.length||0)}</b><span>Post</span></div><div class="stat"><b>${fmt((FOLLOW_META[u.uid]?.followers||u.followers||[]).length)}</b><span>Followers</span></div><div class="stat"><b>${fmt((FOLLOW_META[u.uid]?.following||u.follows||[]).length)}</b><span>Following</span></div></div><div class="ob-grid">${ps.map(p=>`<div class="ph" title="${esc(p.author?.username||u.username||'')}"><img src="${p.vid?videoThumb(p.vid,p.img):SQR(p.img)}" loading="lazy" alt="${esc(p.author?.name||u.name||u.username||'')}" onerror="this.remove()"></div>`).join('')||'<div class="ob-empty" style="grid-column:1/-1"><b>Belum ada postingan</b><span>Profil ini belum mengunggah karya.</span></div>'}</div></div>`}
 function scrOnboarding(){const u=ONBOARD_PROFILES[0];return `<section class="screen"><div class="ob-carousel" id="obCar"><div class="ob-slide"><div class="ob-head"><h2>Temukan<br>Barber Terbaik</h2><p>Jelajahi profil barber nyata yang terdaftar di BarberGo.</p></div>${u?onboardingUserCard(u):'<div class="ob-card"><div class="ob-empty"><b>Mencari profil BarberGo...</b><span>Data diambil langsung dari Firestore.</span></div></div>'}</div><div class="ob-slide"><div class="ob-head"><h2>Bagikan &amp;<br>Dapatkan Apresiasi</h2><p>Unggah hasil karya, dapatkan like dan komentar dari pengguna nyata.</p></div>${ONBOARD_PROFILES[1]?onboardingUserCard(ONBOARD_PROFILES[1]):'<div class="ob-card"><div class="ob-empty"><b>Konten nyata</b><span>Tidak ada akun atau statistik dummy.</span></div></div>'}</div></div><div class="dots" id="obDots"><i class="on"></i><i></i></div><button class="btn" data-next>Lanjut</button><button class="btn-o ob-skip" data-go="login">Lewati</button></section>`}
 function scrLogin(){return `<section class="screen"><div class="scrollcol">
   <div class="login-head"><div class="logo-b lb-lg">B</div><div class="brand sm">BARBERGO</div></div>
@@ -2217,10 +2228,15 @@ function scrBooking(barberId){
   <button class="btn bk-btn" id="bkNext" data-bk="${esc(ukey)}" ${svcs.length?'':'disabled'}>Lanjut</button></section>`;
 }
 function notifRow(n){
-  const lead=n.u?`<b>${uname(n.u)}${vb(n.u)}</b> `:'';
+  const lead=n.u?`<b>${uname(n.u)}${vb(n.u)}</b> `:(n.title?`<b>${esc(n.title)}</b> `:'');
   const avr=n.u?av(n.u,40):`<span class="avatar sz40 av-logo">B</span>`;
   const tail=n.thumb?`<span class="thumb ph"><img src="${SQR(n.thumb)}" loading="lazy" alt="" onerror="this.remove()"></span>`:(n.u?`<span class="dim">${I('dots-v','ic ic18')}</span>`:'');
-  return `<div class="notif cursor" data-kind="${n.k}" ${n.go?`data-go="${n.go}"`:''}>${avr}<div class="txt">${lead}${esc(n.t)}<span class="time">${n.time}</span></div>${tail}</div>`;
+  return `<div class="notif cursor${n.read?'':' unread'}" data-notif-id="${esc(n.id)}" data-kind="${esc(n.k)}">${avr}<div class="txt">${lead}${esc(n.t)}<span class="time">${esc(n.time)}${n.read?'':' · Baru'}</span></div>${tail}</div>`;
+}
+function openNotificationDetail(n){
+  if(!n)return;
+  const actor=n.u?`<div style="display:flex;align-items:center;gap:10px;margin:4px 0 16px">${av(n.u,44)}<div><b>${esc(uname(n.u))}${vb(n.u)}</b><div class="dim" style="font-size:11px">@${esc(uname(n.u))}</div></div></div>`:`<div style="display:flex;align-items:center;gap:10px;margin:4px 0 16px"><span class="avatar sz44 av-logo">B</span><div><b>BARBERGO</b><div class="dim" style="font-size:11px">Notifikasi sistem</div></div></div>`;
+  openSheet(`<h3 class="sh-t">${esc(n.title||'Notifikasi')}</h3>${actor}<div style="font-size:14px;line-height:1.7;color:#e7e7e7;white-space:pre-wrap">${esc(n.detail||n.t||'')}</div><div class="dim" style="font-size:11px;margin-top:14px">${esc(n.date||n.time||'')}</div>${n.go?`<button class="btn" style="margin-top:18px" data-notif-go="${esc(n.go)}">Buka</button>`:''}<button class="sh-row" data-close style="margin-top:8px">Tutup</button>`);
 }
 function scrNotif(){return `<section class="screen">
   <div class="page-title">Notifikasi</div>
@@ -2228,7 +2244,7 @@ function scrNotif(){return `<section class="screen">
     <button class="chip active" data-tab="all">Semua</button><button class="chip" data-tab="like">Like</button>
     <button class="chip" data-tab="comment">Komentar</button><button class="chip" data-tab="follow">Follow</button>
     <button class="chip" data-tab="system">Sistem</button></div>
-  <div style="padding-bottom:20px">${state.notifs.map(notifRow).join('')}</div></section>`;
+  <div style="padding-bottom:20px">${state.notifs.length?state.notifs.map(notifRow).join(''):'<div class="empty">Belum ada notifikasi.</div>'}</div></section>`;
 }
 function orderCard(o){
   const canCancel=o.kind==='booking'&&!['Selesai','Dibatalkan'].includes(o.status);
@@ -3175,6 +3191,10 @@ document.addEventListener('click',e=>{
   if(mapRemote){$('#mapAC').hidden=true;$('#mapSearch').value=mapRemote.dataset.label||'';if(mapsAPI&&mapsAPI.flyTo)mapsAPI.flyTo(+mapRemote.dataset.lat,+mapRemote.dataset.lng,13);return}
   const wdc=t.closest('[data-wdcode]');
   if(wdc){wdCodeSheet(wdc.dataset.wdcode);return}
+  const nd=t.closest('[data-notif-id]');
+  if(nd){const n=(state.notifs||[]).find(x=>x.id===nd.dataset.notifId);if(n){openNotificationDetail(n);if(!n.read&&FBuid&&window.BGF){BGF.setDoc(BGF.doc(BGF.db,'notifications',FBuid,'items',n.id),{read:true},{merge:true}).catch(()=>{});n.read=true;state.notificationUnread=Math.max(0,(state.notificationUnread||0)-1);state.notifSeen=state.notificationUnread===0;saveLocalOnly();}}return}
+  const ngo=t.closest('[data-notif-go]');
+  if(ngo){closeSheet();go(ngo.dataset.notifGo);return}
   const goEl=t.closest('[data-go]');
   if(goEl){if(goEl.dataset.toast)toast(goEl.dataset.toast);go(goEl.dataset.go);return}
   if(t.closest('[data-back]')){stack.pop();const prev=stack.pop();if(prev===undefined)go('home');else location.hash=prev;return}
