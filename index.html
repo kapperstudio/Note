@@ -124,8 +124,9 @@ body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',syste
 .ic{display:block;width:22px;height:22px;flex:0 0 auto}
 .ic12{width:12px;height:12px}.ic14{width:14px;height:14px}.ic16{width:16px;height:16px}.ic18{width:18px;height:18px}.ic20{width:20px;height:20px}.ic22{width:22px;height:22px}.ic24{width:24px;height:24px}.ic28{width:28px;height:28px}.ic34{width:34px;height:34px}
 .ic-heart,.ic-bookmark{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
-.like-btn.liked{color:var(--red)}
-.like-btn.liked .ic-heart{fill:currentColor}
+.like-btn .ic-heart,.rs.like-btn .ic-heart,.story-like .ic-heart,.cmt-like .ic-heart{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.like-btn.liked,.rs.like-btn.liked,.story-like.liked,.cmt-like.liked{color:var(--red)}
+.like-btn.liked .ic-heart,.rs.like-btn.liked .ic-heart,.story-like.liked .ic-heart,.cmt-like.liked .ic-heart{fill:currentColor}
 .saved .ic-bookmark{fill:#fff;stroke:#fff}
 .ic-star{fill:currentColor}
 .dim{color:#8b8b8b}.cursor{cursor:pointer}
@@ -147,7 +148,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',syste
 .chip-row::-webkit-scrollbar{display:none}
 .avatar{position:relative;border-radius:50%;overflow:hidden;background:#1c1c1c;flex:0 0 auto;display:block}
 .avatar img{width:100%;height:100%;object-fit:cover;display:block}
-.sz24{width:24px;height:24px}.sz30{width:30px;height:30px}.sz36{width:36px;height:36px}.sz40{width:40px;height:40px}.sz44{width:44px;height:44px}.sz48{width:48px;height:48px}.sz56{width:56px;height:56px}.sz58{width:58px;height:58px}.sz84{width:84px;height:84px}
+.sz24{width:24px;height:24px}.sz28{width:28px;height:28px}.sz30{width:30px;height:30px}.sz36{width:36px;height:36px}.sz40{width:40px;height:40px}.sz44{width:44px;height:44px}.sz48{width:48px;height:48px}.sz56{width:56px;height:56px}.sz58{width:58px;height:58px}.sz84{width:84px;height:84px}
 .ph{position:relative;overflow:hidden;background:linear-gradient(140deg,#242424,#0f0f0f)}
 .ph img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .45s}
 .ph img.ld{opacity:1}
@@ -621,7 +622,7 @@ button.statb{cursor:pointer}
 .sv-row b{font-size:13px}
 .sv-row>span:nth-child(3){font-size:11.5px;color:#cfcfcf;flex:1}
 .sv-x{color:#fff;display:flex;padding:6px}
-.sv-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sv-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
 .sv-zone{position:absolute;top:90px;bottom:0;width:33%;z-index:4}
 .sv-zone.l{left:0}
 .sv-zone.r{right:0;left:auto;width:67%}
@@ -649,16 +650,17 @@ button.statb{cursor:pointer}
 .field-bad{border-color:#ff5268!important;box-shadow:0 0 0 1px rgba(255,82,104,.12)}
 .validation-ok{color:#39d98a!important}.validation-bad{color:#ff5268!important}.validation-warn{color:#f4b63f!important}
 .post-carousel{position:relative;width:100%;overflow:hidden;background:#080808;aspect-ratio:4/5;transition:aspect-ratio .18s ease}.post-carousel.detail-carousel{max-height:calc(100dvh - 190px)}.post-carousel-track{display:flex;width:100%;height:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}.post-carousel-track::-webkit-scrollbar{display:none}.post-carousel-item{flex:0 0 100%;height:100%;scroll-snap-align:center;display:block;position:relative}.post-carousel-item img,.post-carousel-item video{display:block;width:100%;height:100%;object-fit:cover;background:#080808}.post-carousel-track{scroll-behavior:smooth}.post-slide-dots{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:5px;padding:4px 7px;border-radius:99px;background:rgba(0,0,0,.42)}.post-slide-dots i{width:5px;height:5px;border-radius:50%;background:#777}.post-slide-dots i.on{background:#fff}.post-slide-count{position:absolute;right:10px;top:10px;padding:4px 8px;border-radius:99px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700} .booking-admin{margin:8px 12px;padding:10px;border:1px solid #292929;border-radius:14px;background:#111}.booking-admin .ba-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #222}.booking-admin .ba-row:last-child{border-bottom:0}.booking-admin .ba-actions{display:flex;gap:6px}.booking-admin .ba-actions button{padding:7px 10px;font-size:11px}..schedule-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;background:#191919;color:#9c9c9c;font-size:10px;margin:3px 3px 0 0}
-.schedule-chip.ok{background:rgba(57,217,138,.10);color:#39d98a}.schedule-chip.off{background:rgba(255,82,104,.08);color:#ff5268}.tab-valid{position:relative}.tab-valid::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:6px;vertical-align:2px;background:#f4b63f}.tab-valid.ok::after{background:#39d98a}.tab-valid.bad::after{background:#ff5268}.search-results{padding:4px 0 24px}.search-section{padding:12px 18px 4px;font-size:14px;font-weight:800}.search-user{display:flex;align-items:center;gap:11px;padding:11px 18px;width:100%;max-width:100%;min-height:64px;text-align:left;overflow:hidden}.search-user>.avatar{width:42px!important;height:42px!important;min-width:42px!important;max-width:42px!important;flex:0 0 42px!important}.search-user img{max-width:100%;max-height:100%}.search-user .su-t{min-width:0;flex:1}.search-user .su-t b{display:block}.search-user .su-t span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.search-user .su-act{font-size:11px;color:var(--muted)}.search-empty{padding:55px 25px;text-align:center;color:var(--muted)}.upload-progress{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;display:none;align-items:center;justify-content:center;padding:24px}.upload-progress.show{display:flex}.upload-progress .up-card{width:min(380px,92%);background:#151515;border:1px solid #292929;border-radius:20px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.55)}.up-title{font-size:16px;font-weight:800}.up-sub{font-size:12px;color:var(--muted);margin-top:6px}.up-track{height:7px;border-radius:99px;background:#292929;overflow:hidden;margin-top:18px}.up-bar{height:100%;width:0;background:#fff;border-radius:99px;transition:width .25s ease}.up-stat{display:flex;justify-content:space-between;margin-top:9px;font-size:11px;color:#aaa}.comment-menu{position:absolute;right:0;top:2px}.cmt-menu-btn{width:28px;height:28px;display:grid;place-items:center;color:#777}.story-viewers{position:absolute;left:14px;right:14px;bottom:18px;z-index:7;display:flex;align-items:center;gap:8px;color:#fff;font-size:11px;text-shadow:0 1px 5px #000}.story-viewers .sv-stack{display:flex}.story-viewers .sv-stack .avatar{margin-left:-7px;border:2px solid #000}.story-viewers .sv-stack .avatar:first-child{margin-left:0}.story-viewers button{font-size:11px;font-weight:700;color:#fff}.story-viewers-panel{max-height:55vh;overflow:auto}.story-viewer-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #222}.story-viewer-row .txt{flex:1}.story-viewer-row .txt small{display:block;color:var(--muted);margin-top:2px}
+.schedule-chip.ok{background:rgba(57,217,138,.10);color:#39d98a}.schedule-chip.off{background:rgba(255,82,104,.08);color:#ff5268}.tab-valid{position:relative}.tab-valid::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:6px;vertical-align:2px;background:#f4b63f}.tab-valid.ok::after{background:#39d98a}.tab-valid.bad::after{background:#ff5268}.search-results{padding:4px 0 24px}.search-section{padding:12px 18px 4px;font-size:14px;font-weight:800}.search-user{display:flex;align-items:center;gap:11px;padding:11px 18px;width:100%;max-width:100%;min-height:64px;text-align:left;overflow:hidden}.search-user>.avatar{width:42px!important;height:42px!important;min-width:42px!important;max-width:42px!important;flex:0 0 42px!important}.search-user img{max-width:100%;max-height:100%}.search-user .su-t{min-width:0;flex:1}.search-user .su-t b{display:block}.search-user .su-t span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.search-user .su-act{font-size:11px;color:var(--muted)}.search-empty{padding:55px 25px;text-align:center;color:var(--muted)}.upload-progress{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;display:none;align-items:center;justify-content:center;padding:24px}.upload-progress.show{display:flex}.upload-progress .up-card{width:min(380px,92%);background:#151515;border:1px solid #292929;border-radius:20px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.55)}.up-title{font-size:16px;font-weight:800}.up-sub{font-size:12px;color:var(--muted);margin-top:6px}.up-track{height:7px;border-radius:99px;background:#292929;overflow:hidden;margin-top:18px}.up-bar{height:100%;width:0;background:#fff;border-radius:99px;transition:width .25s ease}.up-stat{display:flex;justify-content:space-between;margin-top:9px;font-size:11px;color:#aaa}.comment-menu{position:absolute;right:0;top:2px}.cmt-menu-btn{width:28px;height:28px;display:grid;place-items:center;color:#777}.story-viewers{position:absolute;left:14px;right:14px;bottom:18px;z-index:7;display:flex;align-items:center;gap:8px;color:#fff;font-size:11px;text-shadow:0 1px 5px #000}.story-viewers .sv-stack{display:flex}.story-viewers .sv-stack .avatar{width:28px!important;height:28px!important;min-width:28px!important;max-width:28px!important;flex:0 0 28px!important;margin-left:-7px;border:2px solid #000}.story-viewers .sv-stack{width:auto;max-width:170px;flex:0 0 auto}.story-viewers .sv-stack .avatar:first-child{margin-left:0}.story-viewers button{font-size:11px;font-weight:700;color:#fff}.story-viewers-panel{max-height:55vh;overflow:auto}.story-viewer-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #222}.story-viewer-row .txt{flex:1}.story-viewer-row .txt small{display:block;color:var(--muted);margin-top:2px}.hold-target{touch-action:manipulation}.chat-menu-count{margin-left:6px;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:var(--red);color:#fff;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}.preview-post{margin:-2px -2px 0}.preview-media{width:100%;aspect-ratio:4/5;max-height:62vh;background:#080808;border-radius:16px;overflow:hidden;position:relative}.preview-media img,.preview-media video{width:100%;height:100%;object-fit:contain;display:block;background:#080808}.preview-head{display:flex;align-items:center;gap:10px;padding:4px 0 12px}.preview-head .txt{flex:1;min-width:0}.preview-head .txt b{display:flex;align-items:center;gap:3px}.preview-actions{display:flex;align-items:center;gap:10px;padding-top:4px}.preview-actions .pa{display:flex;align-items:center;gap:5px;color:#ddd}.preview-actions .pa.liked{color:var(--red)}.preview-caption{font-size:13px;line-height:1.5;color:#e7e7e7;padding:10px 0}
 
 .ad-card{margin:8px 12px 14px;border:1px solid #292929;border-radius:16px;background:#111;overflow:hidden}.ad-head{display:flex;align-items:center;gap:8px;padding:11px 12px;font-size:12px}.ad-label{font-size:9px;font-weight:900;letter-spacing:.8px;padding:3px 6px;border-radius:5px;background:#222;color:#bbb}.ad-dot{margin-left:auto;color:#777;font-size:10px}.ad-media{width:100%;background:#080808;aspect-ratio:4/3}.ad-media img,.ad-media video{width:100%;height:100%;object-fit:cover;display:block}.ad-body{padding:10px 12px}.ad-body p{margin:0 0 9px;color:#ddd;font-size:12px;line-height:1.5}.ad-open{padding:7px 12px;font-size:11px}
-.story-like{position:absolute;right:16px;bottom:58px;z-index:8;width:42px;height:42px;border:0;border-radius:50%;background:rgba(0,0,0,.48);color:#fff;display:grid;place-items:center}.story-like.liked{color:#ff4458;background:rgba(0,0,0,.62)}.story-like small{position:absolute;top:31px;font-size:9px;color:#fff;white-space:nowrap}
+.friend-suggestions{padding:14px 0 16px;border-bottom:1px solid #222;margin-bottom:4px}.suggest-head{padding:0 2px 10px}.suggest-head b{display:block;font-size:14px}.suggest-head span{display:block;color:var(--muted);font-size:10.5px;margin-top:3px}.suggest-grid{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;padding:2px 0 5px}.suggest-grid::-webkit-scrollbar{display:none}.suggest-card{width:142px;min-width:142px;padding:13px 10px;border:1px solid #292929;border-radius:16px;background:#111;display:flex;flex-direction:column;align-items:center;text-align:center}.suggest-card>b{font-size:11.5px;margin-top:8px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.suggest-card>small{color:var(--muted);font-size:9.5px;margin:3px 0 9px;min-height:25px}.suggest-card .mini-follow{width:100%;justify-content:center}.security-card{display:flex;align-items:flex-start;gap:11px}.sec-icon{width:38px;height:38px;border-radius:12px;background:#191919;display:grid;place-items:center;flex:0 0 auto}.security-card .sub{margin:5px 0 0}.security-card .sec-main{flex:1;min-width:0}.security-card .sec-main>b{display:block}.security-card .sec-main>span{display:block;color:var(--muted);font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sec-status{margin-left:auto;font-size:10px;padding:5px 8px;border-radius:99px;background:#222;color:#aaa}.sec-status.ok{color:#39d98a;background:rgba(57,217,138,.1)}.security-provider{display:flex;justify-content:space-between;gap:10px;padding:10px 11px;border:1px solid #292929;border-radius:12px;background:#101010;color:#ddd;font-size:11px}.security-provider small{color:var(--muted)}
+.story-like{position:absolute;right:16px;bottom:58px;z-index:8;width:42px;height:42px;border:0;border-radius:50%;background:rgba(0,0,0,.48);color:#fff;display:grid;place-items:center}.story-like.liked{color:#ff4458;background:rgba(0,0,0,.62)}.story-like small{position:absolute;top:31px;font-size:9px;color:#fff;white-space:nowrap}.story-like.liked .ic{filter:drop-shadow(0 1px 4px rgba(255,68,88,.35))}
 </style>
 
 <!-- ===== FIREBASE: Auth (Email, Google, Apple/iCloud) + Firestore ===== -->
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import{getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,signInWithRedirect,getRedirectResult,GoogleAuthProvider,OAuthProvider,signOut,updateProfile,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import{getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signInWithPopup,signInWithRedirect,getRedirectResult,GoogleAuthProvider,OAuthProvider,signOut,updateProfile,setPersistence,browserLocalPersistence,EmailAuthProvider,reauthenticateWithCredential,updatePassword,sendEmailVerification}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import{getFirestore,doc,getDoc,setDoc,deleteDoc,collection,getDocs,onSnapshot,query,where,orderBy,limit,increment}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig={apiKey:"AIzaSyDb9KnG1MNGnS62UuZGZ6MIdGcIXmcwoVA",authDomain:"kapperstudio-c629c.firebaseapp.com",projectId:"kapperstudio-c629c",storageBucket:"kapperstudio-c629c.firebasestorage.app",messagingSenderId:"689372483921",appId:"1:689372483921:web:de297c0dd520b8a0f2c370",measurementId:"G-BWBJCSQQEF"};
@@ -671,7 +673,7 @@ const googleProvider=new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:'select_account'});
 
 window.BGF={
-  auth,db,doc,getDoc,setDoc,deleteDoc,collection,getDocs,onSnapshot,query,where,orderBy,limit,
+  auth,db,doc,getDoc,setDoc,deleteDoc,collection,getDocs,onSnapshot,query,where,orderBy,limit,EmailAuthProvider,reauthenticateWithCredential,updatePassword,sendEmailVerification,
   emailLogin:(e,p)=>signInWithEmailAndPassword(auth,e,p),
   emailRegister:(e,p)=>createUserWithEmailAndPassword(auth,e,p),
   google:()=>signInWithPopup(auth,googleProvider).catch(async e=>{
@@ -786,7 +788,7 @@ const isMediaURL=s=>!s||s.startsWith('data:')||s.startsWith('http')||s.startsWit
 const PIC=s=>isMediaURL(s)?(s||''):`https://picsum.photos/seed/${s}/700/875`;
 const SQR=s=>isMediaURL(s)?(s||''):`https://picsum.photos/seed/${s}/400/400`;
 const rp=n=>'Rp '+(+n||0).toLocaleString('id-ID');
-const fmt=n=>n>=1000?(Math.round(n/100)/10+'').replace(/\.0$/,'')+'K':String(n);
+const fmt=n=>{n=Math.max(0,Number(n)||0);if(n>=1e9)return (Math.round(n/1e8)/10+'').replace(/\.0$/,'')+'B';if(n>=1e6)return (Math.round(n/1e5)/10+'').replace(/\.0$/,'')+'M';if(n>=1e3)return (Math.round(n/100)/10+'').replace(/\.0$/,'')+'K';return String(Math.floor(n))};
 const DAY=86400e3,HOUR=3600e3;
 function hashS(s){let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))%99991;return h}
 function timeAgo(ts){const d=Date.now()-ts;if(d<HOUR)return Math.max(1,Math.round(d/6e4))+' mnt';if(d<24*HOUR)return Math.round(d/HOUR)+' jam';return Math.round(d/24/HOUR)+' hari'}
@@ -872,7 +874,7 @@ function fresh(){return{
   balance:0,payMethod:'COD',cards:[],txs:[],
   services:[],products:[],cart:[],mapLocations:[],businessLocation:null,
   serviceSchedules:{}, paymentMethods:[],
-  messageCounts:{},notificationUnread:0,
+  messageCounts:{},notificationUnread:0,blockedUsers:{},chatDeletedAt:{},
   orders:[],
   cposts:[],
   prodReviews:{},svcReviews:[],
@@ -893,6 +895,7 @@ if(state){
   state.unread={};
   state.notifs=(state.notifs||[]).filter(n=>n.u==='me'||n.uid==='me');
   state.chats={};
+  state.blockedUsers=state.blockedUsers||{};state.chatDeletedAt=state.chatDeletedAt||{};
 }
 (function(){
   const now=Date.now(),keep=[],exp=[];
@@ -907,7 +910,7 @@ let hlT=null,hlI=0,hlSlides=[],reelIO=null,mapsAPI=null,feedIO=null;
 let stack=[],chatUser=null,createImg=null,createVid=null,pendingAv=null,stImg=null,replyTo=null,postLoc=null,feedMode='u';
 let syncBusy=false,syncPending=false,syncRetry=0,syncRetryT=null,syncGeneration=0;
 let postsUnsub=null,cloudPostsReady=false;
-let profilesUnsub=null,followingUnsub=null,followersUnsub=null,chatUnsub=null,chatThreadsUnsub=null,storiesUnsub=null,storyLikesUnsub=null,productsUnsub=null,servicesUnsub=null,locationsUnsub=null,faqUnsub=null,schedulesUnsub=null,reviewsUnsub=null,financeUnsub=null,ordersUnsub=null,postStatsUnsub=null,notificationsUnsub=null,adsUnsub=null;
+let profilesUnsub=null,followingUnsub=null,followersUnsub=null,chatUnsub=null,chatThreadsUnsub=null,blocksUnsub=null,storiesUnsub=null,storyLikesUnsub=null,productsUnsub=null,servicesUnsub=null,locationsUnsub=null,faqUnsub=null,schedulesUnsub=null,reviewsUnsub=null,financeUnsub=null,ordersUnsub=null,postStatsUnsub=null,notificationsUnsub=null,adsUnsub=null;
 let ADS=[];
 const PUBLIC_PROFILES={};
 const FOLLOW_META={};
@@ -1358,9 +1361,32 @@ function startChatThreadsListener(){
   if(chatThreadsUnsub){try{chatThreadsUnsub()}catch(e){}chatThreadsUnsub=null}
   const ref=BGF.collection(BGF.db,'chatThreads');
   chatThreadsUnsub=BGF.onSnapshot(BGF.query(ref,BGF.where('participants','array-contains',FBuid)),snap=>{
-    snap.docs.forEach(d=>{const x=d.data(),other=(x.participants||[]).find(u=>u!==FBuid);if(!other)return;const m=x.lastMessage||{};state.messageCounts[other]=Number(x.messageCount||0);state.chats[other]=[{k:m.senderUid===FBuid?'me':other,t:m.t||'',img:m.img||null,video:m.video||null,created:m.created||x.updated||0,id:'last'}];if(m.senderUid&&m.senderUid!==FBuid&&m.readBy!==FBuid)state.unread[other]=1});
-    const incomingNow=snap.docs.map(d=>d.data()||{}).filter(x=>x.lastMessage&&x.lastMessage.senderUid&&x.lastMessage.senderUid!==FBuid).reduce((m,x)=>Math.max(m,Number(x.lastMessage.created||0)),0); if(window.__bgLastChatTs&&incomingNow>window.__bgLastChatTs)snd('message'); window.__bgLastChatTs=Math.max(window.__bgLastChatTs||0,incomingNow); saveLocalOnly();if(location.hash==='#/messages'){}
+    snap.docs.forEach(d=>{const x=d.data()||{},other=(x.participants||[]).find(u=>u!==FBuid);if(!other)return;const m=x.lastMessage||{},deletedAt=Number((x.deletedAt||{})[FBuid]||state.chatDeletedAt?.[other]||0);
+      if(state.blockedUsers?.[other]){delete state.chats[other];return}
+      if(deletedAt&&Number(m.created||x.updated||0)<=deletedAt){delete state.chats[other];delete state.unread[other];return}
+      if(deletedAt&&Number(m.created||x.updated||0)>deletedAt){delete state.chatDeletedAt[other];}
+      state.messageCounts[other]=Number(x.messageCount||0);state.chats[other]=[{k:m.senderUid===FBuid?'me':other,t:m.t||'',img:m.img||null,video:m.video||null,created:m.created||x.updated||0,id:'last'}];if(m.senderUid&&m.senderUid!==FBuid&&m.readBy!==FBuid)state.unread[other]=1});
+    const incomingNow=snap.docs.map(d=>d.data()||{}).filter(x=>x.lastMessage&&x.lastMessage.senderUid&&x.lastMessage.senderUid!==FBuid).reduce((m,x)=>Math.max(m,Number(x.lastMessage.created||0)),0); if(window.__bgLastChatTs&&incomingNow>window.__bgLastChatTs)snd('message'); window.__bgLastChatTs=Math.max(window.__bgLastChatTs||0,incomingNow); saveLocalOnly();if(location.hash==='#/messages')render();
   },e=>fbErrorInfo(e,'onSnapshot/chatThreads'));
+}
+function startBlocksListener(){
+  if(!window.BGF||!FBuid)return;
+  if(blocksUnsub){try{blocksUnsub()}catch(e){}blocksUnsub=null}
+  blocksUnsub=BGF.onSnapshot(BGF.query(BGF.collection(BGF.db,'blocks'),BGF.where('blockerUid','==',FBuid)),snap=>{
+    state.blockedUsers={};snap.docs.forEach(d=>{const x=d.data()||{};if(x.blockedUid)state.blockedUsers[x.blockedUid]=1});
+    Object.keys(state.chats||{}).forEach(u=>{if(state.blockedUsers[u]){delete state.chats[u];delete state.unread[u]}});saveLocalOnly();if(location.hash==='#/messages')render();
+  },e=>fbErrorInfo(e,'onSnapshot/blocks'));
+}
+function stopBlocksListener(){if(blocksUnsub){try{blocksUnsub();}catch(e){}blocksUnsub=null}}
+async function deleteChatRemote(other){
+  if(!window.BGF||!FBuid||!other)throw new Error('Firestore belum siap');
+  const cid=chatDocId(FBuid,other),ref=BGF.doc(BGF.db,'chatThreads',cid),snap=await BGF.getDoc(ref),x=snap.exists()?snap.data()||{}:{};
+  const deletedAt={...(x.deletedAt||{}),[FBuid]:Date.now()};
+  await BGF.setDoc(ref,{participants:[FBuid,other],deletedAt,updated:Date.now()},{merge:true});
+}
+async function blockUserRemote(other){
+  if(!window.BGF||!FBuid||!other||other===FBuid)throw new Error('Pengguna tidak valid');
+  const id=FBuid+'_'+other;await BGF.setDoc(BGF.doc(BGF.db,'blocks',id),{blockerUid:FBuid,blockedUid:other,created:Date.now()},{merge:true});
 }
 function stopChatThreadsListener(){if(chatThreadsUnsub){try{chatThreadsUnsub()}catch(e){}chatThreadsUnsub=null}
 }
@@ -1378,11 +1404,13 @@ function startChatListener(other){
 function stopChatListener(){if(chatUnsub){try{chatUnsub()}catch(e){}chatUnsub=null}}
 async function sendChatRemote(other,msg){
   if(!window.BGF||!FBuid||!other||other===FBuid)return false;
+  if(state.blockedUsers?.[other])throw new Error('Kamu memblokir pengguna ini');
   const cid=chatDocId(FBuid,other),id='m'+Date.now()+Math.random().toString(36).slice(2,7);
   const data={senderUid:FBuid,receiverUid:other,t:msg.t||'',created:Date.now()};
   if(msg.img)data.img=msg.img;if(msg.video)data.video=msg.video;if(msg.embed)data.embed=msg.embed;if(msg.q)data.q=msg.q;
   await BGF.setDoc(BGF.doc(BGF.db,'chats',cid,'messages',id),data);
-  await BGF.setDoc(BGF.doc(BGF.db,'chatThreads',cid),{participants:[FBuid,other],lastMessage:{senderUid:FBuid,t:data.t||'',img:data.img||null,video:data.video||null,created:data.created,readBy:FBuid},messageCount:increment(1),updated:data.created},{merge:true});
+  delete state.chatDeletedAt[other];
+  await BGF.setDoc(BGF.doc(BGF.db,'chatThreads',cid),{participants:[FBuid,other],deletedAt:{[FBuid]:0},lastMessage:{senderUid:FBuid,t:data.t||'',img:data.img||null,video:data.video||null,created:data.created,readBy:FBuid},messageCount:increment(1),updated:data.created},{merge:true});
   await notifyRemote(other,'message',(state.me.username?'@'+state.me.username:'Seseorang')+' mengirim pesan',cid);
   return true;
 }
@@ -1563,6 +1591,7 @@ async function loadCloudProfile(user){
       startProfilesListener();
       startFollowListeners();
       startChatThreadsListener();
+      startBlocksListener();
       publishPublicProfile();
       state.products=[...(d.products||[])].map(normalizeCloudProduct);
       state.cposts=[...(d.cposts||[])];
@@ -1590,6 +1619,7 @@ async function loadCloudProfile(user){
       startProfilesListener();
       startFollowListeners();
       startChatThreadsListener();
+      startBlocksListener();
       publishPublicProfile();
       syncPending=true;
       scheduleSync(0);
@@ -1629,6 +1659,7 @@ function initCloudAuth(){
       stopFollowListeners();
       stopChatListener();
       stopChatThreadsListener();
+      stopBlocksListener();
       FBuid=null;
       FBemail=null;
       syncPending=false;
@@ -2001,7 +2032,7 @@ function postCard(p){
   return `<article class="post" data-u="${p.u}">
     <div class="post-head">${av(p.u,36,`class="avatar sz36 cursor" data-go="${go}"`)}<div class="post-user" data-go="${go}"><b>${uname(p.u)}${vb(p.u)}</b>${postMetaHTML(p)}${dist}</div>${p.u!=='me'?`<button class="follow-chip${isFollowing(p.u)?' on':''}" data-follow="${p.u}">${followLabel(p.u)}</button>`:''}<span class="cursor dim" data-opts="${p.id}">${I('dots','ic ic18')}</span></div>
     <div class="${mediaClass}" data-feedpost="${p.id}" data-has-video="${hasVideo?'1':''}">${media}${musicAudio}${musicButton}</div>
-    <div class="post-actions"><button class="pa like-btn${liked?' liked':''}" data-like="${p.id}">${I('heart','ic ic22 ic-heart')}<span class="cnt">${fmt(getBase(p.id)+(liked?1:0))}</span></button><button class="pa" data-go="post/${p.id}">${I('comment','ic ic22')}<span>${(p.cm||0)+countC(p.comments)}</span></button><button class="pa" data-share="post" data-id="${p.id}">${I('send','ic ic22')}</button><button class="pa bm${saved?' saved':''}" data-save="${p.id}" style="margin-left:auto">${I('bookmark','ic ic22 ic-bookmark')}</button></div>
+    <div class="post-actions"><button class="pa like-btn${liked?' liked':''}" data-like="${p.id}">${I('heart','ic ic22 ic-heart')}<span class="cnt">${fmt(getBase(p.id)+(liked?1:0))}</span></button><button class="pa" data-go="post/${p.id}">${I('comment','ic ic22')}<span>${fmt((p.cm||0)+countC(p.comments))}</span></button><button class="pa" data-share="post" data-id="${p.id}">${I('send','ic ic22')}</button><button class="pa bm${saved?' saved':''}" data-save="${p.id}" style="margin-left:auto">${I('bookmark','ic ic22 ic-bookmark')}</button></div>
     <div class="caption"><b class="cursor" data-go="${go}">${uname(p.u)}</b> ${capHTML(p)}</div><div class="see-more" data-go="post/${p.id}">Lihat semua komentar</div></article>`;
 }
 
@@ -2155,7 +2186,7 @@ function scrExplore(){
   <div class="sec"><b>Barber Populer</b><span data-go="maps">Lihat peta</span></div>
   <div class="b-cards">${users.map(([k,u])=>`<div class="b-card"><span class="avatar sz56"><img src="${SQR(u.av||k)}" loading="lazy" alt="" onerror="this.remove()"></span><b data-go="barber/${k}">${esc(u.username)}${vb(k)}</b><span>${esc(u.cat||'Barber')}</span>${k!==FBuid?followButton(k,true):''}</div>`).join('')||'<div class="empty">Belum ada profil publik.</div>'}</div>
   <div class="sec"><b>Postingan Untukmu</b><span>${posts.length} konten</span></div>
-  <div class="grid3" style="padding-bottom:20px">${posts.slice(0,30).map(p=>`<div class="ph${p.vid?' rl':''}" data-go="${p.vid?`reels/${encodeURIComponent(p.id)}`:`post/${p.id}`}" ><img src="${esc(p.vid?videoThumb(p.vid,p.img):SQR(p.img))}" loading="lazy" alt="" onerror="this.onerror=null;this.src='${esc(SQR(p.img))}'">${p.vid?'<span class="pl">'+I('play','ic ic12')+'Reel</span>':''}</div>`).join('')||'<div class="empty" style="grid-column:1/-1">Belum ada postingan publik.</div>'}</div></section>`;
+  <div class="grid3" style="padding-bottom:20px">${posts.slice(0,30).map(p=>`<div class="ph hold-target${p.vid?' rl':''}" data-post-id="${esc(p.id)}" data-go="${p.vid?`reels/${encodeURIComponent(p.id)}`:`post/${p.id}`}" ><img src="${esc(p.vid?videoThumb(p.vid,p.img):SQR(p.img))}" loading="lazy" alt="" onerror="this.onerror=null;this.src='${esc(SQR(p.img))}'">${p.vid?'<span class="pl">'+I('play','ic ic12')+'Reel</span>':''}</div>`).join('')||'<div class="empty" style="grid-column:1/-1">Belum ada postingan publik.</div>'}</div></section>`;
 }
 function scrMaps(){
   return `<section class="screen fixed">
@@ -2213,7 +2244,7 @@ function scrProfile(){
   const tagged=state.posts.filter(p=>p.u!=='me').slice(0,6);
   const fol=state.followers.length,fog=Object.keys(state.follows).length;
   const showBook=state.pro.on&&state.svcOn;
-  const grid=arr=>arr.map(p=>`<div class="ph${p.vid?' rl':''}" data-go="${p.vid?`reels/${encodeURIComponent(p.id)}`:`post/${p.id}`}">${p.vid?`<img src="${esc(videoThumb(p.vid,p.img))}" loading="lazy" alt="" onerror="this.onerror=null;this.src='${esc(PIC(p.img))}'">`:`<img src="${SQR(p.img)}" loading="lazy" alt="" onerror="this.remove()">`}${p.vid?'<span class="pl">'+I('play','ic ic12')+'Reel</span>':''}</div>`).join('');
+  const grid=arr=>arr.map(p=>`<div class="ph hold-target${p.vid?' rl':''}" data-post-id="${esc(p.id)}" data-go="${p.vid?`reels/${encodeURIComponent(p.id)}`:`post/${p.id}`}">${p.vid?`<img src="${esc(videoThumb(p.vid,p.img))}" loading="lazy" alt="" onerror="this.onerror=null;this.src='${esc(PIC(p.img))}'">`:`<img src="${SQR(p.img)}" loading="lazy" alt="" onerror="this.remove()">`}${p.vid?'<span class="pl">'+I('play','ic ic12')+'Reel</span>':''}</div>`).join('');
   return `<section class="screen">
   <header class="appbar"><div class="ab-title">${esc(m.username||'profil')}${vb('me')}</div><button class="ab-ic" data-go="settings">${I('menu','ic ic24')}</button></header>
   <div class="scrollcol" style="padding-bottom:20px">
@@ -2265,8 +2296,8 @@ function scrReels(startId){
       <div class="reel-media" style="position:absolute;inset:0;z-index:2"></div>
       <span class="rpause">${I('pause')}</span>
       <div class="reel-side">
-        <button class="rs like-btn${liked?' liked':''}" data-like="${r.id}">${I('heart')}<span class="cnt">${fmt(getBase(r.id)+(liked?1:0))}</span></button>
-        <button class="rs" data-reelcmt="${r.id}">${I('comment')}<span>${r.cm+countC(state.reelCmts[r.id])}</span></button>
+        <button class="rs like-btn${liked?' liked':''}" data-like="${r.id}">${I('heart','ic ic28 ic-heart')}<span class="cnt">${fmt(getBase(r.id)+(liked?1:0))}</span></button>
+        <button class="rs" data-reelcmt="${r.id}">${I('comment')}<span>${fmt(r.cm+countC(state.reelCmts[r.id]))}</span></button>
         <button class="rs" data-share="reel" data-id="${r.id}">${I('send')}</button>
         <button class="rs" data-ropts="${r.id}">${I('dots')}</button></div>
       <div class="reel-info">
@@ -2391,12 +2422,15 @@ function scrMessages(){return `<section class="screen">
   <label class="search">${I('search','ic ic18')}<input id="msgSearch" placeholder="Cari percakapan..." autocomplete="off"></label>
   <div class="chip-row" data-tabs="msel">
     <button class="chip active" data-tab="list">Semua</button>
-    <button class="chip" data-tab="barber">Barber</button>
-    <button class="chip" data-tab="orders">Orderan</button></div>
+    <button class="chip" data-tab="barber">Barber${incomingBookings(FBuid).length?` <span class="chat-menu-count">${fmt(incomingBookings(FBuid).length)}</span>`:''}</button>
+    <button class="chip" data-tab="orders">Orderan${state.orders.filter(o=>o.ownerUid===FBuid&&!['Selesai','Dibatalkan'].includes(o.status)).length?` <span class="chat-menu-count">${fmt(state.orders.filter(o=>o.ownerUid===FBuid&&!['Selesai','Dibatalkan'].includes(o.status)).length)}</span>`:''}</button></div>
   <div data-msel="list" id="msgList">
     ${THREADS().map(u=>{
       const th=state.chats[u]||[],last=th.length?th[th.length-1].t:'';
-      return `<div class="msg" data-go="chat/${u}" data-mk="${((USERS[u]||{}).cat||'').includes('Barber')?'barber':''}" data-search="${esc((uname(u)+' '+last).toLowerCase())}">${av(u,48)}<div class="m-txt"><b>${uname(u)}${vb(u)}</b><p>${esc(last)}</p></div><span class="m-time">${state.unread[u]?'<i class="mdot"></i>':''}${state.messageCounts[u]?`<small>${fmt(state.messageCounts[u])}</small>`:''}</span></div>`}).join('')}</div>
+      return `<div class="msg hold-target" data-chat-user="${esc(u)}" data-go="chat/${u}" data-mk="${((USERS[u]||{}).cat||'').includes('Barber')?'barber':''}" data-search="${esc((uname(u)+' '+last).toLowerCase())}">${av(u,48)}<div class="m-txt"><b>${uname(u)}${vb(u)}</b><p>${esc(last)}</p></div><span class="m-time">${state.unread[u]?'<i class="mdot"></i>':''}${state.messageCounts[u]?`<small>${fmt(state.messageCounts[u])}</small>`:''}</span></div>`}).join('')}</div>
+  <div data-msel="barber" hidden>
+    ${bookingAdminHTML(FBuid)||'<div class="empty">Belum ada booking atau orderan masuk.</div>'}
+  </div>
   <div data-msel="orders" hidden>
     <div class="sec"><b>Orderan</b><span></span></div>
     ${state.orders.map(orderCard).join('')||'<div class="empty">Belum ada orderan.</div>'}
@@ -2405,7 +2439,7 @@ function scrMessages(){return `<section class="screen">
   </div>
   <div style="height:20px"></div></section>`;
 }
-const THREADS=()=>[...new Set(Object.keys(state.chats||{}))];
+const THREADS=()=>[...new Set(Object.keys(state.chats||{}))].filter(u=>u!==FBuid&&!state.blockedUsers?.[u]&&!state.chatDeletedAt?.[u]);
 function bubHTML(m,i){
   const q=m.q?`<div class="q"><b>${esc(m.q.n)}</b><br>${esc(m.q.tx)}</div>`:'';
   if(m.video)return `<div class="bub ${m.k}" data-mi="${i}">${q}<video class="bimg bvid" src="${m.video}" loop playsinline preload="metadata" data-viewvid></video></div>`;
@@ -2423,14 +2457,14 @@ function embCard(url,emb){
   return internal?`<div class="emb cursor" data-go="${esc(path)}">${inner}</div>`:`<a class="emb" href="${esc(url)}" target="_blank" rel="noopener">${inner}</a>`;
 }
 function incomingBookings(uid=FBuid){return (state.orders||[]).filter(o=>(o.kind==='booking'&&o.barberUid===uid||o.kind==='shop'&&o.sellerUid===uid)&&!['Selesai','Dibatalkan'].includes(o.status)).sort((a,b)=>(b.updated||0)-(a.updated||0))}
-function bookingAdminHTML(uid){const arr=incomingBookings(uid);if(!arr.length)return '';return `<div class="booking-admin"><b>Pesanan masuk</b>${arr.slice(0,8).map(o=>{const shop=o.kind==='shop';const pending=shop?(o.status==='Diproses'||o.status==='Dipesan'||o.status==='Menunggu'):(o.status==='Dipesan'||o.status==='Menunggu');return `<div class="ba-row"><div><b>${esc(o.title||'Pesanan')}</b><small style="display:block;color:var(--muted)">${shop?'Marketplace':'Layanan'} · ${esc(o.status||'Menunggu')}</small></div><div class="ba-actions">${pending?`<button class="btn-o" data-booking-status="${esc(o.id)}" data-status="Dibatalkan">Tolak</button><button class="btn" data-booking-status="${esc(o.id)}" data-status="${shop?'Diproses':'Dikonfirmasi'}">Terima</button>`:o.status==='Dikonfirmasi'||o.status==='Diproses'?`<button class="btn" data-booking-status="${esc(o.id)}" data-status="Selesai">Selesai</button>`:''}</div></div>`}).join('')}</div>`}
+function bookingAdminHTML(uid){const arr=incomingBookings(uid);if(!arr.length)return '';return `<div class="booking-admin"><b>Booking &amp; Order Masuk</b><small style="display:block;color:var(--muted);margin:3px 0 6px">Kelola penerimaan, penolakan, dan status sampai selesai.</small>${arr.slice(0,12).map(o=>{const shop=o.kind==='shop';const pending=shop?(o.status==='Diproses'||o.status==='Dipesan'||o.status==='Menunggu'):(o.status==='Dipesan'||o.status==='Menunggu');const accepted=o.status==='Dikonfirmasi'||o.status==='Diproses';return `<div class="ba-row"><div style="min-width:0;flex:1"><b>${esc(o.title||'Pesanan')}</b><small style="display:block;color:var(--muted)">${shop?'Marketplace':'Booking Layanan'} · <strong>${esc(o.status||'Menunggu')}</strong></small>${o.time?`<small style="display:block;color:#777">${esc(o.time)}</small>`:''}</div><div class="ba-actions">${pending?`<button class="btn-o" data-booking-status="${esc(o.id)}" data-status="Dibatalkan">Tolak</button><button class="btn" data-booking-status="${esc(o.id)}" data-status="${shop?'Diproses':'Dikonfirmasi'}">Terima</button>`:accepted?`<button class="btn" data-booking-status="${esc(o.id)}" data-status="Selesai">Selesai</button>`:''}</div></div>`}).join('')}</div>`}
 async function updateBookingStatusRemote(order,status){if(!BGF||!FBuid)throw new Error('Firestore belum siap');const ownerOk=(order.barberUid===FBuid)||(order.kind==='shop'&&order.sellerUid===FBuid);if(!ownerOk)throw new Error('Bukan pemilik layanan/toko');const q={status,updated:Date.now(),statusBy:FBuid};await BGF.setDoc(BGF.doc(BGF.db,'orders',order.id),q,{merge:true});return q}
 function startBarberBookingListener(){
   if(!BGF||!FBuid)return;
   if(window.__barberOrdersUnsubs){window.__barberOrdersUnsubs.forEach(u=>{try{u()}catch(e){}})}
   window.__barberOrdersUnsubs=[];
   const mine=(state.orders||[]).filter(o=>o.ownerUid===FBuid);
-  const mergeIncoming=(incoming)=>{const local=(state.orders||[]).filter(o=>o.ownerUid===FBuid||o.barberUid===FBuid||o.sellerUid===FBuid);const map=new Map(local.map(o=>[o.id,o]));incoming.forEach(o=>map.set(o.id,o));state.orders=[...map.values()].sort((a,b)=>(b.updated||0)-(a.updated||0));saveLocalOnly();if(location.hash.startsWith('#/chat/'))refresh()};
+  const mergeIncoming=(incoming)=>{const local=(state.orders||[]).filter(o=>o.ownerUid===FBuid||o.barberUid===FBuid||o.sellerUid===FBuid);const map=new Map(local.map(o=>[o.id,o]));incoming.forEach(o=>map.set(o.id,o));state.orders=[...map.values()].sort((a,b)=>(b.updated||0)-(a.updated||0));saveLocalOnly();if(location.hash.startsWith('#/chat/')||location.hash==='#/messages')refresh()};
   const q1=BGF.query(BGF.collection(BGF.db,'orders'),BGF.where('barberUid','==',FBuid));
   const q2=BGF.query(BGF.collection(BGF.db,'orders'),BGF.where('sellerUid','==',FBuid));
   window.__barberOrdersUnsubs.push(BGF.onSnapshot(q1,snap=>mergeIncoming(snap.docs.map(d=>({id:d.id,...d.data()})))),e=>fbErrorInfo(e,'onSnapshot/barber-orders'));
@@ -2553,14 +2587,14 @@ function scrBarber(id){
       ${svc.length?`<button class="btn" data-go="booking/${esc(id)}">Booking</button>`:''}</div>
     ${highlights.length?`<div class="hl-row">${highlights.map((h,i)=>`<button class="hl" data-hlidx="${i}"><span class="hl-img ph"><img src="${PIC(h.cover||h.slides[0])}" alt="" onerror="this.remove()"></span><span>${esc(h.title)}</span></button>`).join('')}</div>`:''}
     <div class="ctabs"><span class="ctab active">Post</span></div>
-    <div class="grid3">${posts.map(p=>`<div class="ph${p.vid?' rl':''}" data-go="${p.vid?`reels/${encodeURIComponent(p.id)}`:`post/${p.id}`}">${p.vid?`<img src="${esc(videoThumb(p.vid,p.img))}" loading="lazy" alt="" onerror="this.onerror=null;this.src='${esc(PIC(p.img))}'">`:`<img src="${SQR(p.img)}" loading="lazy" alt="" onerror="this.remove()">`}${p.vid?'<span class="pl">'+I('play','ic ic12')+'Reel</span>':''}</div>`).join('')||'<div class="empty" style="grid-column:1/-1">Belum ada postingan.</div>'}</div></div></section>`;
+    <div class="grid3">${posts.map(p=>`<div class="ph hold-target${p.vid?' rl':''}" data-post-id="${esc(p.id)}" data-go="${p.vid?`reels/${encodeURIComponent(p.id)}`:`post/${p.id}`}">${p.vid?`<img src="${esc(videoThumb(p.vid,p.img))}" loading="lazy" alt="" onerror="this.onerror=null;this.src='${esc(PIC(p.img))}'">`:`<img src="${SQR(p.img)}" loading="lazy" alt="" onerror="this.remove()">`}${p.vid?'<span class="pl">'+I('play','ic ic12')+'Reel</span>':''}</div>`).join('')||'<div class="empty" style="grid-column:1/-1">Belum ada postingan.</div>'}</div></div></section>`;
 }
 function scrPost(){
   const p=findPost(pid());
   if(!p){go('home');return '<section class="screen"></section>'}
   const liked=!!state.likes[p.id],saved=!!state.saves[p.id],goP=p.u==='me'?'profile':'barber/'+p.u,mediaList=postMediaList(p),hasMusic=!!(p.music&&p.music.preview);
   const media=mediaList.length>1?`<div class="post-carousel detail-carousel" data-carousel data-adaptive-carousel><div class="post-carousel-track">${mediaList.map(m=>m.type==='video'?`<div class="post-carousel-item"><div class="detail-video-wrap"><video data-carouselvid="${esc(m.url)}" data-original-audio="1" poster="${esc(videoThumb(m.url,p.img))}" ${state.muted||hasMusic?'muted':''} loop playsinline controls preload="metadata"></video><button class="feed-mute detail-mute" data-detail-mute="1" aria-label="${state.muted?'Unmute':'Mute'}">${I(state.muted?'mute':'vol','ic ic18')}</button></div></div>`:`<div class="post-carousel-item"><img src="${esc(m.url)}" alt="" onerror="this.remove()"></div>`).join('')}</div><div class="post-slide-dots">${mediaList.map((_,i)=>`<i class="${i===0?'on':''}"></i>`).join('')}</div><span class="post-slide-count">1/${mediaList.length}</span></div>${hasMusic?`<audio id="postDetailMusic" src="${esc(p.music.preview)}" loop ${state.muted?'muted':''}></audio>`:''}`:mediaList[0].type==='video'?`<div class="ph post-img feed-media detail-media" data-postmedia="${p.id}"><video id="postDetailVideo" class="post-img" data-original-audio="1" poster="${esc(videoThumb(mediaList[0].url,p.img))}" src="${esc(mediaList[0].url)}" style="width:100%;aspect-ratio:4/5;object-fit:cover;background:#000" loop playsinline ${state.muted||hasMusic?'muted':''} preload="metadata"></video>${hasMusic?`<audio id="postDetailMusic" src="${esc(p.music.preview)}" loop ${state.muted?'muted':''}></audio>`:''}<button class="feed-mute detail-mute" id="postDetailMute" data-detail-mute="1">${I(state.muted?'mute':'vol','ic ic18')}</button></div>`:`<div class="ph post-img feed-media detail-media" data-postmedia="${p.id}"><img src="${esc(mediaList[0].url)}" alt="" onerror="this.remove()">${hasMusic?`<audio id="postDetailMusic" src="${esc(p.music.preview)}" loop ${state.muted?'muted':''}></audio><button class="feed-mute detail-mute" id="postDetailMute" data-detail-mute="1">${I(state.muted?'mute':'vol','ic ic18')}</button>`:''}</div>`;
-  return `<section class="screen fixed"><header class="appbar">${backBtn}<div class="ab-title">Postingan</div><span class="cursor dim" data-opts="${p.id}">${I('dots','ic ic18')}</span></header><div class="scrollcol" style="flex:1"><div class="post" style="border:0"><div class="post-head">${av(p.u,36,`class="avatar sz36 cursor" data-go="${goP}"`)}<div class="post-user" data-go="${goP}"><b>${uname(p.u)}${vb(p.u)}</b>${postMetaHTML(p)}</div>${p.u!=='me'&&!state.follows[p.u]?`<button class="follow-chip" data-follow="${p.u}">Follow</button>`:''}</div>${media}<div class="post-actions"><button class="pa like-btn${liked?' liked':''}" data-like="${p.id}">${I('heart','ic ic22 ic-heart')}<span class="cnt">${fmt(getBase(p.id)+(liked?1:0))}</span></button><span class="pa">${I('comment','ic ic22')}<span id="cmCount">${(p.cm||0)+countC(p.comments)}</span></span><button class="pa" data-share="post" data-id="${p.id}">${I('send','ic ic22')}</button><button class="pa bm${saved?' saved':''}" data-save="${p.id}" style="margin-left:auto">${I('bookmark','ic ic22 ic-bookmark')}</button></div><div class="caption"><b class="cursor" data-go="${goP}">${uname(p.u)}</b> ${capHTML(p)}</div></div><div class="cm-head">Komentar</div><div id="cmList"></div><div style="height:12px"></div></div><div class="cwrap"><div class="replychip" id="replyChip" hidden><span id="replyTxt"></span><button id="replyX">${I('x','ic ic14')}</button></div><div class="cbar"><input id="cmIn" placeholder="Tambahkan komentar..." autocomplete="off"><button class="c-send" id="cmSend">Kirim</button></div></div></section>`;
+  return `<section class="screen fixed"><header class="appbar">${backBtn}<div class="ab-title">Postingan</div><span class="cursor dim" data-opts="${p.id}">${I('dots','ic ic18')}</span></header><div class="scrollcol" style="flex:1"><div class="post" style="border:0"><div class="post-head">${av(p.u,36,`class="avatar sz36 cursor" data-go="${goP}"`)}<div class="post-user" data-go="${goP}"><b>${uname(p.u)}${vb(p.u)}</b>${postMetaHTML(p)}</div>${p.u!=='me'&&!state.follows[p.u]?`<button class="follow-chip" data-follow="${p.u}">Follow</button>`:''}</div>${media}<div class="post-actions"><button class="pa like-btn${liked?' liked':''}" data-like="${p.id}">${I('heart','ic ic22 ic-heart')}<span class="cnt">${fmt(getBase(p.id)+(liked?1:0))}</span></button><span class="pa">${I('comment','ic ic22')}<span id="cmCount">${fmt((p.cm||0)+countC(p.comments))}</span></span><button class="pa" data-share="post" data-id="${p.id}">${I('send','ic ic22')}</button><button class="pa bm${saved?' saved':''}" data-save="${p.id}" style="margin-left:auto">${I('bookmark','ic ic22 ic-bookmark')}</button></div><div class="caption"><b class="cursor" data-go="${goP}">${uname(p.u)}</b> ${capHTML(p)}</div></div><div class="cm-head">Komentar</div><div id="cmList"></div><div style="height:12px"></div></div><div class="cwrap"><div class="replychip" id="replyChip" hidden><span id="replyTxt"></span><button id="replyX">${I('x','ic ic14')}</button></div><div class="cbar"><input id="cmIn" placeholder="Tambahkan komentar..." autocomplete="off"><button class="c-send" id="cmSend">Kirim</button></div></div></section>`;
 }
 
 function cmtRow(c,path,depth){
@@ -2608,6 +2642,20 @@ function scrFaq(){
   return `<section class="screen"><header class="appbar">${backBtn}<div class="ab-title">FAQ</div><span class="ab-sp"></span></header><div class="scrollcol" style="padding:12px 16px 30px"><p class="sub" style="margin:0 0 14px">Pertanyaan umum tentang akun, layanan, Marketplace, peta, Story, dan fitur BARBERGO.</p>${items.map((x,i)=>`<details class="cardish" style="margin-bottom:9px;padding:13px 14px" ${i===0?'open':''}><summary style="cursor:pointer;font-weight:800">${esc(x.q||x.question||'Pertanyaan')}</summary><p class="sub" style="margin:9px 0 0;line-height:1.55">${esc(x.a||x.answer||'')}</p></details>`).join('')}</div></section>`;
 }
 
+function scrSecurity(){
+  const u=BGF?.auth?.currentUser;
+  const providers=(u?.providerData||[]).map(x=>x.providerId);
+  const hasPassword=providers.includes('password');
+  const verified=!!u?.emailVerified;
+  return `<section class="screen"><header class="appbar">${backBtn}<div class="ab-title">Keamanan</div><span class="ab-sp"></span></header><div class="scrollcol" style="padding:12px 16px 30px">
+    <div class="cardish security-card"><div class="sec-icon">${I('lock','ic ic20')}</div><div><b>Keamanan akun</b><p class="sub">Kelola akses login dan perlindungan akun BarberGo.</p></div></div>
+    <div class="cardish security-card"><div class="sec-main"><b>Email akun</b><span>${esc(u?.email||FBemail||'-')}</span></div><span class="sec-status ${verified?'ok':''}">${verified?'Terverifikasi':'Belum terverifikasi'}</span>${!verified?'<button class="btn-o" id="secVerify" style="margin-top:10px">Kirim email verifikasi</button>':''}</div>
+    <div class="cardish"><b>Kata sandi</b><p class="sub">${hasPassword?'Ubah kata sandi akun secara berkala untuk menjaga keamanan.':'Akun ini menggunakan login pihak ketiga. Kata sandi dikelola oleh penyedia login.'}</p>${hasPassword?`<div class="e-field"><label>Kata sandi saat ini</label><input id="secOld" type="password" autocomplete="current-password"></div><div class="e-field"><label>Kata sandi baru</label><input id="secNew" type="password" autocomplete="new-password"></div><div class="e-field"><label>Ulangi kata sandi baru</label><input id="secNew2" type="password" autocomplete="new-password"></div><button class="btn" id="secPassword">Simpan kata sandi</button>`:'<div class="security-provider">Login aktif: '+esc(providers.join(', ')||'provider eksternal')+'</div>'}</div>
+    <div class="cardish"><b>Sesi login</b><p class="sub">Periksa akun yang sedang aktif pada perangkat ini.</p><div class="security-provider"><span>${esc(u?.email||FBemail||'Akun aktif')}</span><small>Perangkat ini · Sesi aktif</small></div><button class="btn-o" id="secLogout">Keluar dari perangkat ini</button></div>
+    <div class="cardish"><b>Tips keamanan</b><ul class="check"><li class="ok">Gunakan kata sandi unik dan panjang.</li><li class="ok">Jangan berikan kode verifikasi kepada siapa pun.</li><li class="ok">Pastikan alamat email pemulihan tetap bisa diakses.</li></ul></div>
+  </div></section>`;
+}
+
 function scrSettings(){return `<section class="screen">
   <header class="appbar">${backBtn}<div class="ab-title">Pengaturan</div><span class="ab-sp"></span></header>
   <div class="scrollcol">
@@ -2620,6 +2668,7 @@ function scrSettings(){return `<section class="screen">
       ${state.pro.on?`<div class="menu-row" data-go="services">${I('scissors')}Atur Layanan<span class="chev">${I('chev','ic ic18')}</span></div>
       <div class="menu-row" data-go="products">${I('store')}Atur Marketplace<span class="chev">${I('chev','ic ic18')}</span></div>`:''}
       <div class="menu-row" data-go="payments">${I('card')}Metode Pembayaran<span class="chev">${I('chev','ic ic18')}</span></div>
+      <div class="menu-row" data-go="security">${I('lock')}Keamanan<span class="chev">${I('chev','ic ic18')}</span></div>
       <div class="menu-row" data-setrow="snd">${I('bell')}Suara Notifikasi<span class="switch${state.sndOn?' on':''}"></span></div>
       <div class="menu-row" data-setrow="vib">${I('sparkle')}Getar (Vibrasi)<span class="switch${state.vibOn?' on':''}"></span></div>
       <div class="menu-row" data-go="faq">${I('help')}Bantuan &amp; FAQ<span class="chev">${I('chev','ic ic18')}</span></div>
@@ -2656,10 +2705,35 @@ function scrSaved(){
 
 function userRow(u,act){return `<div class="frow">${av(u,44)}<div class="f-t"><b>${uname(u)}${vb(u)}</b><span>${ucat(u)}</span></div>${act}</div>`}
 
+async function loadFriendSuggestions(){
+  if(!window.BGF||!FBuid)return [];
+  try{
+    const base=[...new Set((state.followers||[]).filter(Boolean))].slice(0,30);
+    let docs=[];
+    if(base.length){
+      const snap=await BGF.getDocs(BGF.query(BGF.collection(BGF.db,'follows'),BGF.where('followerUid','in',base)));
+      docs=snap.docs.map(d=>d.data());
+    }
+    const mutual={};
+    docs.forEach(x=>{const u=x.followeeUid;if(!u||u===FBuid||state.follows[u]||state.blockedUsers?.[u])return;mutual[u]=(mutual[u]||0)+1});
+    let ids=Object.keys(mutual).sort((a,b)=>(mutual[b]-mutual[a])||((FOLLOW_META[b]?.followers||[]).length-(FOLLOW_META[a]?.followers||[]).length));
+    if(!ids.length){
+      ids=Object.keys(PUBLIC_PROFILES).filter(u=>u!==FBuid&&!state.follows[u]&&!state.blockedUsers?.[u]&&!state.followers.includes(u));
+      ids.sort((a,b)=>{const af=(FOLLOW_META[a]?.followers||[]).length,bf=(FOLLOW_META[b]?.followers||[]).length;return (bf-af)||(hashS(b+String(state.seed||1))-hashS(a+String(state.seed||1)))});
+    }
+    return ids.slice(0,8).map(uid=>({uid,mutual:mutual[uid]||0}));
+  }catch(e){fbErrorInfo(e,'getFriendSuggestions');return []}
+}
+function renderFriendSuggestions(rows){
+  const box=$('#friendSuggestions');if(!box)return;
+  if(!rows.length){box.hidden=true;return}
+  box.hidden=false;box.innerHTML=`<div class="suggest-head"><div><b>Orang yang mungkin Anda kenal</b><span>Disarankan berdasarkan koneksi yang kamu ikuti</span></div></div><div class="suggest-grid">${rows.map(x=>{const u=x.uid;return `<div class="suggest-card">${av(u,52)}<b>${esc(uname(u))}${vb(u)}</b><small>${x.mutual?`${fmt(x.mutual)} koneksi bersama`:(ucat(u)||'Barber')}</small><button class="mini-follow${state.follows[u]?' on':''}" data-follow="${esc(u)}">${followLabel(u)}</button></div>`}).join('')}</div>`;
+}
 function scrFollowers(){
   const list=state.followers.filter(u=>!state.frm[u]);
+  setTimeout(()=>loadFriendSuggestions().then(renderFriendSuggestions),40);
   return `<section class="screen"><header class="appbar">${backBtn}<div class="ab-title">Pengikut (${state.followers.length})</div><span class="ab-sp"></span></header>
-  <div class="scrollcol" style="padding-bottom:20px">${list.map(u=>userRow(u,`<button class="icbtn" data-frm="${u}">${I('x','ic ic14')}</button>`)).join('')||'<div class="empty">Belum ada pengikut.<br>Bagikan kontenmu agar orang mengikutimu.</div>'}</div></section>`;
+  <div class="scrollcol" style="padding-bottom:20px"><div id="friendSuggestions" class="friend-suggestions" hidden></div>${list.map(u=>userRow(u,`<button class="icbtn" data-frm="${u}">${I('x','ic ic14')}</button>`)).join('')||'<div class="empty">Belum ada pengikut.<br>Bagikan kontenmu agar orang mengikutimu.</div>'}</div></section>`;
 }
 
 function scrFollowing(){
@@ -2834,10 +2908,10 @@ function scrSearch(q){
     const ps=(state.posts||[]).filter(p=>p.u===u||p.ownerUid===u).slice(0,3);
     return `<div class="search-user-row" data-go="${u==='me'?'profile':'barber/'+encodeURIComponent(u)}"><span class="avatar sz56"><img src="${avSrc(u)}" alt="" onerror="this.remove()"></span><div class="f-t"><b>${esc(uname(u))}${vb(u)}</b><span>${esc(U.cat||'Barber')} · ${fmt((FOLLOW_META[u]?.followers||U.followers||[]).length)} pengikut</span></div><div class="search-mini-grid">${ps.map(p=>`<span class="ph">${p.vid?`<img src="${esc(videoThumb(p.vid,p.img))}" alt="">`:p.img?`<img src="${SQR(p.img)}" alt="">`:''}</span>`).join('')}</div></div>`;
   }).join('')||'<div class="empty">Akun tidak ditemukan.</div>';
-  const postCards=posts.map(p=>`<div class="ph search-post ${p.vid?'rl':''}" data-go="${p.vid?'reels/'+encodeURIComponent(p.id):'post/'+encodeURIComponent(p.id)}">${p.vid?`<img src="${esc(videoThumb(p.vid,p.img))}" alt="">`:p.img?`<img src="${SQR(p.img)}" alt="">`:''}${p.vid?`<span class="pl">${I('play','ic ic12')}Reel</span>`:''}</div>`).join('')||'<div class="empty" style="grid-column:1/-1">Postingan tidak ditemukan.</div>';
+  const postCards=posts.map(p=>`<div class="ph search-post hold-target ${p.vid?'rl':''}" data-post-id="${esc(p.id)}" data-go="${p.vid?'reels/'+encodeURIComponent(p.id):'post/'+encodeURIComponent(p.id)}">${p.vid?`<img src="${esc(videoThumb(p.vid,p.img))}" alt="">`:p.img?`<img src="${SQR(p.img)}" alt="">`:''}${p.vid?`<span class="pl">${I('play','ic ic12')}Reel</span>`:''}</div>`).join('')||'<div class="empty" style="grid-column:1/-1">Postingan tidak ditemukan.</div>';
   return `<section class="screen"><header class="appbar">${backBtn}<div class="ab-title">Hasil Pencarian</div><span class="ab-sp"></span></header><div class="scrollcol" style="padding-bottom:24px"><label class="search" style="margin:10px 12px 8px">${I('search','ic ic18')}<input id="searchResultInput" value="${esc(q)}" placeholder="Cari barber, postingan, tag..." autocomplete="off"></label>${tags.length?`<div class="sec"><b>Tag</b><span>${tags.length}</span></div><div class="chip-row">${tags.map(t=>`<button class="chip" data-go="hashtag/${encodeURIComponent(t)}">#${esc(t)}</button>`).join('')}</div>`:''}<div class="sec"><b>Akun</b><span>${users.length}</span></div><div class="search-users">${userCards}</div><div class="sec"><b>Postingan</b><span>${posts.length}</span></div><div class="grid3 search-post-grid">${postCards}</div>${products.length?`<div class="sec"><b>Produk</b><span>${products.length}</span></div>${products.map(p=>`<div class="frow"><span class="thumb ph" style="width:52px;height:52px">${prodImg(p)}</span><div class="f-t"><b>${esc(p.n)}</b><span>${rp(p.p)} · ${esc(p.cat||'')}</span></div></div>`).join('')}`:''}</div></section>`;
 }
-const ROUTES={search:scrSearch,history:scrHistory,splash:scrSplash,onboarding:scrOnboarding,login:scrLogin,register:scrRegister,setup:scrSetup,home:scrHome,explore:scrExplore,maps:scrMaps,reels:scrReels,create:scrCreate,createstory:scrCreatestory,notif:scrNotif,profile:scrProfile,marketplace:scrMarketplace,community:scrCommunity,settings:scrSettings,edit:scrEdit,saved:scrSaved,followers:scrFollowers,following:scrFollowing,services:scrServices,products:scrProducts,payments:scrPayments,payment:scrPayment,messages:scrMessages,faq:scrFaq};
+const ROUTES={search:scrSearch,history:scrHistory,splash:scrSplash,onboarding:scrOnboarding,login:scrLogin,register:scrRegister,setup:scrSetup,home:scrHome,explore:scrExplore,maps:scrMaps,reels:scrReels,create:scrCreate,createstory:scrCreatestory,notif:scrNotif,profile:scrProfile,marketplace:scrMarketplace,community:scrCommunity,settings:scrSettings,edit:scrEdit,saved:scrSaved,followers:scrFollowers,following:scrFollowing,services:scrServices,products:scrProducts,payments:scrPayments,payment:scrPayment,security:scrSecurity,messages:scrMessages,faq:scrFaq};
 
 /* ============ ROUTER ============ */
 const view=$('#view'),navslot=$('#navslot'),sidebar=$('#sidebar'),shellEl=document.querySelector('.mainwrap');
@@ -2906,6 +2980,46 @@ function setupPostVideo(){
 }
 function setupPostMusic(){const a=$('#postDetailMusic');if(a){a.muted=!!state.muted;a.play().catch(()=>{})}applyPostDetailMute()}
 
+function postPreviewSheet(id){
+  const p=findPost(id);if(!p)return;
+  const ml=postMediaList(p);if(!ml.length)return;
+  const liked=!!state.likes[id],saved=!!state.saves[id];
+  const m=ml[0];
+  const media=m.type==='video'?`<video src="${esc(m.url)}" poster="${esc(videoThumb(m.url,p.img))}" autoplay muted loop playsinline preload="metadata"></video>`:`<img src="${esc(m.url)}" alt="" onerror="this.remove()">`;
+  openSheet(`<div class="preview-post">
+    <div class="preview-head">${av(p.u,40)}<div class="txt"><b>${uname(p.u)}${vb(p.u)}</b><small class="dim">${esc(postDateTime(p.created)||p.time||'')}</small></div><button class="ab-ic" data-opts="${esc(id)}">${I('dots','ic ic18')}</button></div>
+    <div class="preview-media">${media}${ml.length>1?`<span class="post-slide-count">1/${ml.length}</span>`:''}</div>
+    <div class="preview-actions">
+      <button class="pa like-btn${liked?' liked':''}" data-like="${esc(id)}">${I('heart','ic ic22 ic-heart')}<span class="cnt">${fmt(getBase(id)+(liked?1:0))}</span></button>
+      <button class="pa" data-preview-open="${esc(id)}">${I('comment','ic ic22')}<span>${fmt((p.cm||0)+countC(p.comments))}</span></button>
+      <button class="pa bm${saved?' saved':''}" data-save="${esc(id)}">${I('bookmark','ic ic22 ic-bookmark')}</button>
+      <button class="pa" data-share="post" data-id="${esc(id)}">${I('send','ic ic22')}</button>
+    </div>
+    <div class="preview-caption"><b>${uname(p.u)}</b> ${capHTML(p)}</div>
+    ${ml.length>1?`<div class="dim" style="font-size:11px;margin-top:2px">Postingan memiliki ${ml.length} media. Buka postingan untuk melihat semua slide.</div>`:''}
+    <div class="sh-actions"><button class="btn" data-preview-open="${esc(id)}">Lihat postingan lengkap</button><button class="btn-o" data-close>Tutup</button></div>
+  </div>`);
+}
+function chatActionsSheet(u){
+  if(!u||u===FBuid)return;
+  const blocked=!!state.blockedUsers?.[u];
+  openSheet(`<h3 class="sh-t">@${esc(uname(u))}</h3><p class="sh-sub">Kelola percakapan ini.</p>
+    <button class="sh-row" data-chat-delete="${esc(u)}">${I('trash','ic ic18')} Hapus chat</button>
+    <button class="sh-row" data-chat-block="${esc(u)}" style="color:${blocked?'#7ee2a8':'#ff7a7a'}">${I('x','ic ic18')} ${blocked?'Sudah diblokir':'Blokir pengguna'}</button>
+    <button class="sh-row" data-report="chat:${esc(u)}">${I('help','ic ic18')} Laporkan</button>
+    <button class="sh-row" data-close style="border:0">Batal</button>`);
+}
+function wireHoldInteractions(){
+  const root=view;if(!root)return;
+  $$('.hold-target[data-post-id], .msg[data-chat-user]',root).forEach(el=>{
+    let timer=null,held=false,sx=0,sy=0;
+    const cancel=()=>{if(timer){clearTimeout(timer);timer=null}};
+    el.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;sx=e.clientX;sy=e.clientY;held=false;cancel();timer=setTimeout(()=>{held=true;window.__bgHoldUntil=Date.now()+700;vibrate(20);const id=el.dataset.postId;if(id)postPreviewSheet(id);else chatActionsSheet(el.dataset.chatUser);},480)});
+    el.addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-sx,e.clientY-sy)>12)cancel()});
+    el.addEventListener('pointerup',e=>{cancel();if(held){e.preventDefault();e.stopPropagation();held=false}});
+    el.addEventListener('pointercancel',cancel);el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation()});
+  });
+}
 function render(){
   clearTimeout(hlT);
   if(reelIO){reelIO.disconnect();reelIO=null}
@@ -2950,6 +3064,7 @@ function render(){
   if(r==='reels')setupReels(param);
   if(r==='maps')bootMapsScreen();
   if(r==='highlight')hlShow(0);
+  wireHoldInteractions();
 }
 addEventListener('hashchange',render);
 
@@ -2981,19 +3096,19 @@ function openViewer(slides,u,label,storyIds=[],onDone=null,storyRecords=[]){
   o.innerHTML=`<img class="sv-img" src="${PIC(slides[0])}" alt="">
     <div class="sv-top"><div class="sv-bars">${slides.map((_,i)=>`<b${i===0?' class="run"':''}><i></i></b>`).join('')}</div>
     <div class="sv-row"><span class="sv-av"><img src="${avSrc(u)}" alt=""></span><b>${uname(u)}${vb(u)}</b><span>${label}</span><button class="sv-x" id="svViewers" title="Penonton">${I('user','ic ic18')}</button><button class="sv-x" id="svX">${I('x','ic ic20')}</button></div></div>
-    <button class="story-like" id="storyLikeBtn" aria-label="Like story">${I('heart','ic ic20')}<small id="storyLikeCount">0</small></button>
+    <button class="story-like" id="storyLikeBtn" aria-label="Like story">${I('heart','ic ic20 ic-heart')}<small id="storyLikeCount">0</small></button>
     ${storyIds.length?`<div class="story-viewers"><div class="sv-stack" id="storyViewerStack"></div><button id="storyViewerOpen">Lihat penonton</button></div>`:''}
     <button class="sv-zone l" data-dir="-1"></button><button class="sv-zone r" data-dir="1"></button>`;
   shellEl.appendChild(o);let idx=0,paused=false,remaining=4200,startedAt=Date.now();const bars=$$('.sv-bars b',o),img=$('.sv-img',o);currentStoryOwnerUid=storyRecords[idx]?.ownerUid||u;currentStoryId=storyRecords[idx]?.id||storyIds[0]||'';
   const clearTimer=()=>{clearTimeout(storyTimer);storyTimer=null};
-  const syncLike=async()=>{const r=await loadStoryLikes(currentStoryId);const b=$('#storyLikeBtn',o),c=$('#storyLikeCount',o);if(b)b.classList.toggle('liked',r.liked);if(c)c.textContent=r.count||''};
+  const syncLike=async()=>{const r=await loadStoryLikes(currentStoryId);const b=$('#storyLikeBtn',o),c=$('#storyLikeCount',o);if(b)b.classList.toggle('liked',r.liked);if(c)c.textContent=r.count?fmt(r.count):''};
   const schedule=()=>{clearTimer();startedAt=Date.now();storyTimer=setTimeout(()=>show(idx+1),remaining)};
   const pause=()=>{if(paused)return;paused=true;remaining=Math.max(0,remaining-(Date.now()-startedAt));clearTimer();o.classList.add('paused')};
   const resume=()=>{if(!paused)return;paused=false;o.classList.remove('paused');schedule()};
   const close=(continueNext=true)=>{clearTimer();o.remove();if(continueNext&&onDone)onDone()};
   const viewerBtn=$('#svViewers',o);if(viewerBtn)viewerBtn.onclick=e=>{e.stopPropagation();showStoryViewers(storyIds)};const viewerBtn2=$('#storyViewerOpen',o);if(viewerBtn2)viewerBtn2.onclick=e=>{e.stopPropagation();showStoryViewers(storyIds)};
   const lb=$('#storyLikeBtn',o);if(lb)lb.onclick=async e=>{e.stopPropagation();const r=await loadStoryLikes(currentStoryId);try{await toggleStoryLike(currentStoryId,!r.liked);snd(r.liked?'cancel':'like');await syncLike()}catch(err){toast('Like story gagal: '+fbErr(err))}};
-  if(storyIds.length){loadStoryViewers(storyIds).then(rows=>{const uniq=[...new Map(rows.map(x=>[x.viewerUid,x])).values()];const st=$('#storyViewerStack',o),op=$('#storyViewerOpen',o);if(st)st.innerHTML=uniq.slice(0,5).map(x=>av(x.viewerUid,28)).join('');if(op)op.textContent=uniq.length?`${uniq.length} penonton`:'Belum ada penonton'}).catch(()=>{})}
+  if(storyIds.length){loadStoryViewers(storyIds).then(rows=>{const uniq=[...new Map(rows.map(x=>[x.viewerUid,x])).values()];const st=$('#storyViewerStack',o),op=$('#storyViewerOpen',o);if(st)st.innerHTML=uniq.slice(0,5).map(x=>av(x.viewerUid,28)).join('');if(op)op.textContent=uniq.length?`${fmt(uniq.length)} penonton`:'Belum ada penonton'}).catch(()=>{})}
   const show=i=>{if(i>=slides.length){close(true);return}if(i<0)i=0;idx=i;currentStoryOwnerUid=storyRecords[idx]?.ownerUid||u;currentStoryId=storyRecords[idx]?.id||storyIds[idx]||'';img.src=PIC(slides[i]);bars.forEach((b,j)=>b.className=j<i?'done':(j===i?'run':''));remaining=4200;syncLike().catch(()=>{});recordStoryView(storyRecords[idx]||{id:currentStoryId,ownerUid:u});schedule()};
   o.addEventListener('pointerdown',e=>{if(e.target.closest('#svX')||e.target.closest('#storyLikeBtn')||e.target.closest('#svViewers')||e.target.closest('#storyViewerOpen'))return;pause()});
   o.addEventListener('pointerup',e=>{if(e.target.closest('#svX')||e.target.closest('#storyLikeBtn')||e.target.closest('#svViewers')||e.target.closest('#storyViewerOpen'))return;resume()});o.addEventListener('pointercancel',resume);o.addEventListener('pointerleave',resume);
@@ -3220,7 +3335,7 @@ function setupReels(startId){
       const n=Date.now();
       if(n-last<300){
         clearTimeout(timer);last=0;reel.classList.remove('paused');
-        const burst=document.createElement('span');burst.className='burst';burst.innerHTML=I('heart');
+        const burst=document.createElement('span');burst.className='burst';burst.innerHTML=I('heart','ic ic-heart');
         reel.appendChild(burst);setTimeout(()=>burst.remove(),700);
         const l=reel.querySelector('[data-like]');
         if(l){l.click();vibrate(25)}
@@ -3283,6 +3398,7 @@ document.addEventListener('input',e=>{
   if(e.target&&e.target.id==='marketSearch')buildMarketAC(e.target.value);
 });
 document.addEventListener('click',e=>{
+  if(window.__bgHoldUntil&&Date.now()<window.__bgHoldUntil){window.__bgHoldUntil=0;e.preventDefault();e.stopPropagation();return}
   const t=e.target;
   const adOpen=t.closest('[data-ad-url]');if(adOpen){e.stopPropagation();const u=adOpen.dataset.adUrl||'';if(u){try{window.open(u,'_blank','noopener,noreferrer')}catch(_){location.href=u}}return}
   const aci=t.closest('[data-acins]');
@@ -3357,10 +3473,10 @@ document.addEventListener('click',e=>{
   if(nd){const n=(state.notifs||[]).find(x=>x.id===nd.dataset.notifId);if(n){openNotificationDetail(n);if(!n.read&&FBuid&&window.BGF){BGF.setDoc(BGF.doc(BGF.db,'notifications',FBuid,'items',n.id),{read:true},{merge:true}).catch(()=>{});n.read=true;state.notificationUnread=Math.max(0,(state.notificationUnread||0)-1);state.notifSeen=state.notificationUnread===0;saveLocalOnly();}}return}
   const ngo=t.closest('[data-notif-go]');
   if(ngo){closeSheet();go(ngo.dataset.notifGo);return}
+  if(t.closest('[data-go="home"]')&&location.hash==='#/home'&&state.loggedIn){state.seed=Date.now();feedBatch=4;snd('refresh');vibrate(15);refresh();requestAnimationFrame(()=>{view.scrollTo({top:0,behavior:'smooth'});window.scrollTo({top:0,behavior:'smooth'})});return}
   const goEl=t.closest('[data-go]');
   if(goEl){if(goEl.dataset.toast)toast(goEl.dataset.toast);go(goEl.dataset.go);return}
   if(t.closest('[data-back]')){stack.pop();const prev=stack.pop();if(prev===undefined)go('home');else location.hash=prev;return}
-  if(t.closest('[data-go="home"]')&&location.hash==='#/home'&&state.loggedIn){state.seed=Date.now();feedBatch=4;snd('refresh');vibrate(15);refresh();toast('Feed dimuat ulang');return}
   if(t.closest('[data-next]')){const c=$('#obCar');if(c&&c.scrollLeft<c.scrollWidth-c.clientWidth-20)c.scrollTo({left:c.scrollWidth,behavior:'smooth'});else go('login');return}
   /* ===== AUTH Firebase: Email / Google / Apple ===== */
   const be=t.closest('#btnEmail');
@@ -3500,6 +3616,9 @@ document.addEventListener('click',e=>{
   if(row){const sw=row.querySelector('.switch');if(sw){sw.classList.toggle('on');snd('confirm')}return}
   const eye=t.closest('.eye');
   if(eye){const inp=eye.closest('.field').querySelector('input');inp.type=inp.type==='password'?'text':'password';return}
+  if(t.closest('#secVerify')){const u=BGF?.auth?.currentUser;if(!u){toast('Sesi login tidak ditemukan');return}(async()=>{try{await BGF.sendEmailVerification(u);snd('confirm');toast('Email verifikasi sudah dikirim')}catch(e){snd('cancel');toast('Gagal mengirim verifikasi: '+fbErr(e))}})();return}
+  if(t.closest('#secPassword')){const u=BGF?.auth?.currentUser;if(!u||!BGF.EmailAuthProvider){toast('Fitur keamanan tidak tersedia');return}const oldp=$('#secOld')?.value||'',newp=$('#secNew')?.value||'',newp2=$('#secNew2')?.value||'';if(!oldp||!newp||newp.length<6||newp!==newp2){snd('cancel');toast('Password baru minimal 6 karakter dan harus sama');return}(async()=>{try{const cred=BGF.EmailAuthProvider.credential(u.email,oldp);await BGF.reauthenticateWithCredential(u,cred);await BGF.updatePassword(u,newp);snd('confirm');toast('Kata sandi berhasil diubah');$$('#secOld,#secNew,#secNew2').forEach(x=>{if(x)x.value=''})}catch(e){snd('cancel');toast('Gagal mengubah kata sandi: '+fbErr(e))}})();return}
+  if(t.closest('#secLogout')){confirmSheet('Keluar dari perangkat ini?',async()=>{try{await BGF.auth.signOut();toast('Kamu sudah keluar')}catch(e){toast('Gagal keluar: '+fbErr(e))}});return}
   const srw=t.closest('[data-setrow]');
   if(srw){const k=srw.dataset.setrow;
     if(k==='snd'){state.sndOn=!state.sndOn;save();srw.querySelector('.switch').classList.toggle('on');if(state.sndOn)snd('confirm');toast('Suara notifikasi '+(state.sndOn?'aktif':'mati'))}
@@ -3537,6 +3656,12 @@ document.addEventListener('click',e=>{
   if(rep){if(String(rep.dataset.report).startsWith('comment:')){const parts=rep.dataset.report.split(':');closeSheet();openSheet(`<h3 class="sh-t">Laporkan komentar</h3><p class="sh-sub">Pilih alasan laporan.</p><div>${['Spam','Pelecehan atau perundungan','Ujaran kebencian','Lainnya'].map((x,i)=>`<button class="radio-row${i===0?' sel':''}" data-rad><span class="rdot"></span>${x}</button>`).join('')}</div><div class="sh-actions"><button class="btn-o" data-close>Batal</button><button class="btn" id="cmRepGo">Kirim Laporan</button></div>`);$$('#sheetOvl [data-rad]').forEach(b=>b.onclick=()=>$$('#sheetOvl [data-rad]').forEach(x=>x.classList.toggle('sel',x===b)));$('#cmRepGo').onclick=async()=>{const sel=$$('#sheetOvl [data-rad]').find(x=>x.classList.contains('sel'));try{await submitReportRemote('comment:'+parts[1]+':'+parts[2],sel?.textContent.trim()||'Lainnya');closeSheet();snd('confirm');toast('Laporan komentar terkirim')}catch(e){snd('cancel');toast('Laporan gagal dikirim')}};return}reportSheet(rep.dataset.report);return}
   const dp=t.closest('[data-delpost]');
   if(dp){const id=dp.dataset.delpost;confirmSheet('Hapus postingan ini?',async()=>{const p=findPost(id);if(!p||p.u!=='me'||p.ownerUid!==FBuid){toast('Postingan tidak dapat dihapus');return}try{await deletePostCloud(id);state.posts=state.posts.filter(x=>x.id!==id);delete state.likes[id];delete state.saves[id];save();go('profile');snd('confirm');toast('Postingan dihapus')}catch(err){snd('cancel');toast('Gagal menghapus postingan: '+fbErr(err))}});return}
+  const pvo=t.closest('[data-preview-open]');
+  if(pvo){const id=pvo.dataset.previewOpen;closeSheet();go('post/'+encodeURIComponent(id));return}
+  const chdel=t.closest('[data-chat-delete]');
+  if(chdel){const u=chdel.dataset.chatDelete;confirmSheet('Hapus chat ini?',async()=>{try{await deleteChatRemote(u);state.chatDeletedAt[u]=Date.now();delete state.chats[u];delete state.unread[u];saveLocalOnly();closeSheet();go('messages');snd('cancel');toast('Chat dihapus dari daftar kamu')}catch(err){toast('Gagal menghapus chat: '+fbErr(err))}});return}
+  const chblock=t.closest('[data-chat-block]');
+  if(chblock){const u=chblock.dataset.chatBlock;if(state.blockedUsers?.[u]){toast('Pengguna ini sudah diblokir');return}confirmSheet('Blokir @'+uname(u)+'?',async()=>{try{await blockUserRemote(u);state.blockedUsers[u]=1;delete state.chats[u];delete state.unread[u];saveLocalOnly();closeSheet();go('messages');snd('cancel');toast('Pengguna diblokir')}catch(err){toast('Gagal memblokir: '+fbErr(err))}});return}
   if(t.closest('#cartBtn')){
     const items=state.cart,total=items.reduce((a,b)=>a+b.p,0);
     openSheet(`<h3 class="sh-t">Keranjang</h3>
@@ -3574,7 +3699,7 @@ document.addEventListener('click',e=>{
     const ukey=t.closest('#bkOk').dataset.bk||'me';
     const lines=t.closest('.sheet').querySelector('.bk-sum .lines');
     withLoad(t.closest('#bkOk'),900,async()=>{
-      try{const order={id:'o'+Date.now(),kind:'booking',title:uname(ukey)+' · '+(lines.querySelector('b').textContent.split('· ')[1]||'Haircut'),sub:lines.textContent.split('-')[0].replace(/^[^b]*b>/,'').trim()||'Jadwal booking',price:0,status:'Dikonfirmasi',time:'Baru saja',barberUid:ukey,serviceId:(state.services.find(x=>x.n===(lines.querySelector('b').textContent.split('· ')[1]||''))||{}).id||''};await saveOrderRemote(order);state.orders.unshift(order);if(ukey&&ukey!==FBuid)await notifyRemote(ukey,'booking',(state.me.username?'@'+state.me.username:'Seseorang')+' membuat booking layananmu',order.id);state.notifs.unshift({k:'system',t:'Booking dikonfirmasi: '+lines.textContent.trim(),time:'Baru saja'});state.notifSeen=false;save();closeSheet();snd('book');vibrate();toast('Booking tersimpan di Firestore. Sampai jumpa')}catch(err){toast('Gagal menyimpan booking: '+fbErr(err))}});
+      try{const order={id:'o'+Date.now(),kind:'booking',title:uname(ukey)+' · '+(lines.querySelector('b').textContent.split('· ')[1]||'Haircut'),sub:lines.textContent.split('-')[0].replace(/^[^b]*b>/,'').trim()||'Jadwal booking',price:0,status:'Dipesan',time:'Baru saja',barberUid:ukey,serviceId:(state.services.find(x=>x.n===(lines.querySelector('b').textContent.split('· ')[1]||''))||{}).id||''};await saveOrderRemote(order);state.orders.unshift(order);if(ukey&&ukey!==FBuid)await notifyRemote(ukey,'booking',(state.me.username?'@'+state.me.username:'Seseorang')+' membuat booking layananmu',order.id);state.notifs.unshift({k:'system',t:'Permintaan booking dikirim: '+lines.textContent.trim(),time:'Baru saja'});state.notifSeen=false;save();closeSheet();snd('book');vibrate();toast('Booking tersimpan di Firestore. Sampai jumpa')}catch(err){toast('Gagal menyimpan booking: '+fbErr(err))}});
     return;
   }
   const bs=t.closest('[data-booking-status]');
@@ -3763,7 +3888,7 @@ document.addEventListener('change',async e=>{
 function renderCmts(p){
   const list=$('#cmList');if(!list)return;
   list.innerHTML=p.comments.length?p.comments.map((c,i)=>cmtHTML(c,i)).join(''):'<div class="see-more">Belum ada komentar. Jadilah yang pertama</div>';
-  const cc2=$('#cmCount');if(cc2)cc2.textContent=(p.cm||0)+countC(p.comments);
+  const cc2=$('#cmCount');if(cc2)cc2.textContent=fmt((p.cm||0)+countC(p.comments));
 }
 function commentOpts(path){
   const p=findPost(pid());if(!p)return;const a=path.split(':');const c=p.comments[+a[0]];const target=a[1]?(c?.replies||[])[+a[1]]:c;if(!target)return;
